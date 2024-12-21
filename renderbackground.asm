@@ -33,4 +33,3 @@ BACKGROUND_LOOP1:
 # Finaliza a função
 BACKGROUND_FIM:  
     jr ra                     # Retorna para a função chamadora
-
