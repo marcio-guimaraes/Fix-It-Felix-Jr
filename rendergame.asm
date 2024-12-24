@@ -4,6 +4,22 @@ OLD_CHAR_POS: .half 0,0
 
 .text
 SETUP:
+	la a0,telainicial
+	li a1,0
+	li a2,0
+	li a3,0
+	call PRINT
+	
+	### Espera o usuário pressionar uma tecla
+KEY1: 	li t1,0xFF200000		# carrega o endereço de controle do KDMMIO
+LOOP: 	lw t0,0(t1)			# Le bit de Controle Teclado
+   	andi t0,t0,0x0001		# mascara o bit menos significativo
+   	beq t0,zero,LOOP		# não tem tecla pressionada então volta ao loop
+   	lw t2,4(t1)			# le o valor da tecla
+  	sw t2,12(t1)  			# escreve a tecla pressionada no display
+
+	
+	
         # Desenha o fundo uma vez no início
         la a0,background
         li a1,0
@@ -148,3 +164,4 @@ PRINT_LINHA:
 .include "imagens/knight.data"
 .include "imagens/background.data"
 .include "imagens/tile.data"
+.include "imagens/telainicial.data"

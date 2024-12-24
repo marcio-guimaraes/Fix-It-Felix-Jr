@@ -1,9 +1,9 @@
 .data
-.include "telainicial.asm"
+.include "rendergame.asm"
 
 .text
 
-jal TELAINICIAL
-
-
-li a7, 10
+	jal SETUP
+	
+	li a7,10
+	ecall
