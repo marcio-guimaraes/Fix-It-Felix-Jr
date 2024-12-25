@@ -79,49 +79,64 @@ KEY2:   li t1,0xFF200000    # Carrega o endereço de controle do KDMMIO
 
 FIM:    ret
 
-WALK_LEFT: la t0,CHAR_POS
-        la t1,OLD_CHAR_POS
-        lw t2,0(t0)
-        sw t2,0(t1)
-        
-        la t0,CHAR_POS
-        lh t1,0(t0)
-        addi t1,t1,-16     # Move 16 pixels à esquerda
-        sh t1,0(t0)
-        ret
+WALK_LEFT: 
+    la t0,CHAR_POS
+    la t1,OLD_CHAR_POS
+    lw t2,0(t0)
+    sw t2,0(t1)
+    
+    lh t1,0(t0)            # Carrega a posição X atual
+    addi t1,t1,-16         # Move 16 pixels à esquerda
+    bge t1,zero,OK_LEFT    # Verifica se está dentro da borda esquerda (>= 0)
+    li t1,0                # Se ultrapassar, força posição X = 0
+OK_LEFT:
+    sh t1,0(t0)            # Atualiza a posição X
+    ret
 
-WALK_RIGHT: la t0,CHAR_POS
-        la t1,OLD_CHAR_POS
-        lw t2,0(t0)
-        sw t2,0(t1)
+WALK_RIGHT: 
+    la t0,CHAR_POS
+    la t1,OLD_CHAR_POS
+    lw t2,0(t0)
+    sw t2,0(t1)
 
-        la t0,CHAR_POS
-        lh t1,0(t0)
-        addi t1,t1,16      # Move 16 pixels à direita
-        sh t1,0(t0)
-        ret
-        
-WALK_UP: la t0,CHAR_POS
-        la t1,OLD_CHAR_POS
-        lw t2,0(t0)
-        sw t2,0(t1)
-        
-        la t0,CHAR_POS
-        lh t1,2(t0)
-        addi t1,t1,-16     # Move 16 pixels à esquerda
-        sh t1,2(t0)
-        ret
+    lh t1,0(t0)            # Carrega a posição X atual
+    addi t1,t1,16          # Move 16 pixels à direita
+    li t2,304              # Limite direito (320 - largura do personagem, 16px)
+    blt t1,t2,OK_RIGHT     # Verifica se está dentro da borda direita (< 304)
+    li t1,304              # Se ultrapassar, força posição X = 304
+OK_RIGHT:
+    sh t1,0(t0)            # Atualiza a posição X
+    ret
 
-WALK_DOWN: la t0,CHAR_POS
-        la t1,OLD_CHAR_POS
-        lw t2,0(t0)
-        sw t2,0(t1)
+WALK_UP: 
+    la t0,CHAR_POS
+    la t1,OLD_CHAR_POS
+    lw t2,0(t0)
+    sw t2,0(t1)
+    
+    lh t1,2(t0)            # Carrega a posição Y atual
+    addi t1,t1,-16         # Move 16 pixels para cima
+    bge t1,zero,OK_UP      # Verifica se está dentro da borda superior (>= 0)
+    li t1,0                # Se ultrapassar, força posição Y = 0
+OK_UP:
+    sh t1,2(t0)            # Atualiza a posição Y
+    ret
 
-        la t0,CHAR_POS
-        lh t1,2(t0)
-        addi t1,t1,16      # Move 16 pixels à direita
-        sh t1,2(t0)
-        ret
+WALK_DOWN: 
+    la t0,CHAR_POS
+    la t1,OLD_CHAR_POS
+    lw t2,0(t0)
+    sw t2,0(t1)
+
+    lh t1,2(t0)            # Carrega a posição Y atual
+    addi t1,t1,16          # Move 16 pixels para baixo
+    li t2,224              # Limite inferior (240 - altura do personagem, 16px)
+    blt t1,t2,OK_DOWN      # Verifica se está dentro da borda inferior (< 224)
+    li t1,224              # Se ultrapassar, força posição Y = 224
+OK_DOWN:
+    sh t1,2(t0)            # Atualiza a posição Y
+    ret
+
 
 PRINT:
         li t0,0xFF0
