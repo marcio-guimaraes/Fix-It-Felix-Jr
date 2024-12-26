@@ -1,4 +1,5 @@
 .data
+CHAR_STATE: .word 0  # 0 para Felix, 1 para Knight
 CHAR_POS: .half 0,0       # Posição atual do personagem (X, Y)
 OLD_CHAR_POS: .half 0,0   # Última posição do personagem (X, Y)
 
@@ -35,8 +36,20 @@ GAME_LOOP:
     
     la t0,CHAR_POS        # Carrega o endereço da posição atual do personagem
 
-    # Alternar frame apenas para o personagem
-    la a0,felix           # Carrega o endereço da imagem do personagem "felix" em a0
+    # Verifica se o personagem está em movimento (ou seja, se uma tecla foi pressionada)
+    la t1,CHAR_STATE      # Carrega o endereço do estado do personagem
+    lw t2,0(t1)           # Carrega o estado do personagem (0 = Felix, 1 = Knight)
+    
+    # Alterna o sprite dependendo do estado do personagem
+    beq t2,zero,USE_FELIX # Se o estado for 0, usa Felix
+    la a0,knight          # Se o estado for 1, usa o Knight
+    j DRAW_SPRITE
+
+USE_FELIX:
+    la a0,felix           # Se o estado for 0, usa Felix
+    j DRAW_SPRITE
+
+DRAW_SPRITE:
     lh a1,0(t0)           # Carrega a posição X atual
     lh a2,2(t0)           # Carrega a posição Y atual
     mv a3,s0              # Alterna o frame para o personagem
@@ -77,8 +90,19 @@ KEY2:
     li t0,'d'             # Carrega o valor ASCII da tecla 'd'
     beq t2,t0,WALK_RIGHT  # Se 'd' é pressionado, pula para WALK_RIGHT
 
+    li t0,'f'             # Carrega o valor ASCII da tecla 'f' para Felix
+    beq t2,t0,SET_FELIX   # Se 'f' é pressionado, define como Felix
+
 FIM:    
     ret                   # Retorna da função
+
+SET_FELIX: 
+    li t0,0               # Define o estado para Felix (0)
+    la t1,CHAR_STATE      # Carrega o endereço de CHAR_STATE
+    sw t0,0(t1)           # Atualiza o estado do personagem para Felix
+    ret                   # Retorna da função
+                   # Retorna da função
+
 
 WALK_LEFT: 
     la t0,CHAR_POS        # Carrega o endereço da posição atual do personagem
@@ -92,6 +116,11 @@ WALK_LEFT:
     li t1,0               # Se ultrapassar, força posição X = 0
 OK_LEFT:
     sh t1,0(t0)           # Atualiza a posição X
+
+    li t0,1               # Atualiza o estado para Knight (1)
+    la t1,CHAR_STATE      # Carrega o endereço de CHAR_STATE
+    sw t0,0(t1)           # Atualiza o estado do personagem para Knight
+
     ret                   # Retorna da função
 
 WALK_RIGHT: 
@@ -180,3 +209,4 @@ PRINT_LINHA:
 .include "imagens/fundo.data"        # Inclui dados da imagem do fundo
 .include "imagens/tile.data"         # Inclui dados da imagem do tile
 .include "imagens/telainicial.data"  # Inclui dados da imagem da tela inicial
+.include "imagens/knight.data"
