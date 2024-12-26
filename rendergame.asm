@@ -21,7 +21,7 @@ LOOP: 	lw t0,0(t1)			# Le bit de Controle Teclado
 	
 	
         # Desenha o fundo uma vez no início
-        la a0,background
+        la a0,fundo
         li a1,0
         li a2,0
         li a3,0         # Mapa sempre desenhado no framebuffer 0
@@ -37,7 +37,7 @@ GAME_LOOP:
 
         # Alternar frame apenas para o personagem
         
-        la a0,knight
+        la a0,felix
         lh a1,0(t0)
         lh a2,2(t0)
         mv a3,s0        # Alternar frame para o personagem
@@ -176,7 +176,7 @@ PRINT_LINHA:
         ret
 
 .data
-.include "imagens/knight.data"
-.include "imagens/background.data"
+.include "imagens/felix.data"
+.include "imagens/fundo.data"
 .include "imagens/tile.data"
 .include "imagens/telainicial.data"
