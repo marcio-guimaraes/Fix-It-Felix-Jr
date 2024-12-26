@@ -144,7 +144,9 @@ PRINT_LINHA:
         blt t2,t5,PRINT_LINHA
         ret
 
+
 .data
-.include "imagens/knight.data"
-.include "imagens/background.data"
-.include "imagens/tile.data"
+.include "../imagens/knight.data"
+.include "../imagens/background.data"
+.include "../imagens/tile.data"
+
