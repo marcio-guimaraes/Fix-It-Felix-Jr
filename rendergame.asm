@@ -1,3 +1,4 @@
+
 .data
 CHAR_POS: .half 0,0       # Posição atual do personagem (X, Y)
 OLD_CHAR_POS: .half 0,0   # Última posição do personagem (X, Y)
@@ -47,22 +48,14 @@ GAME_LOOP:
     sw s0,0(t0)           # Atualiza o LED com o valor de s0
     
     la t0,OLD_CHAR_POS    # Carrega o endereço da última posição do personagem
+
+    la a0,fundo            # Carrega o endereço da imagem do tile em a0
+    li a1,0	           # Carrega a última posição X
+    li a2,0		   # Carrega a última posição Y
     
-    # Desenha o fundo uma vez no início
-    la a0,fundo           # Carrega o endereço da imagem do fundo em a0
-    li a1,0               # Coordenada X inicial
-    li a2,0               # Coordenada Y inicial
-    li a3,0               # Framebuffer 0
-    call PRINT            # Chama a função PRINT para desenhar o fundo
-    li a3,1               # Framebuffer 1
-    call PRINT            # Chama a função PRINT para desenhar o fundo novamente
-    
-    xori s0,s0,1          # Alterna o frame buffer (0 ou 1)
-    la a0,felix           # Carrega o endereço da imagem do personagem "felix" em a0
-    lh a1,0(t0)           # Carrega a posição X atual
-    lh a2,2(t0)           # Carrega a posição Y atual
-    mv a3,s0              # Alterna o frame para o personagem
-    call PRINT            # Chama a função PRINT para desenhar o personagem
+    mv a3,s0              # Alterna o frame para o tile
+    xori a3,a3,1          # Alterna o frame buffer
+    call PRINT            # Chama a função PRINT para desenhar o tile
     
     j GAME_LOOP           # Volta para o início do loop do jogo
 
