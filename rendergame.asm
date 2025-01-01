@@ -1,7 +1,8 @@
-
 .data
 CHAR_POS: .half 0,0       # Posição atual do personagem (X, Y)
 OLD_CHAR_POS: .half 0,0   # Última posição do personagem (X, Y)
+SPRITE_PTR: .word felix   # Ponteiro para o sprite atual (começa com "felix")
+VEL_Y: .half 0            # Velocidade vertical do personagem
 
 .text
 SETUP:
@@ -36,8 +37,31 @@ GAME_LOOP:
     
     la t0,CHAR_POS        # Carrega o endereço da posição atual do personagem
 
+    # Atualizar a velocidade vertical com a gravidade
+    la t1, VEL_Y          # Carrega o endereço da velocidade vertical
+    lh t2, 0(t1)          # Carrega a velocidade vertical atual
+    addi t2, t2, 1        # Aumenta a velocidade vertical (gravidade)
+    sh t2, 0(t1)          # Atualiza a velocidade vertical
+
+    # Atualizar a posição vertical do personagem
+    lh t3, 2(t0)          # Carrega a posição Y atual
+    add t3, t3, t2        # Adiciona a velocidade vertical à posição Y
+    sh t3, 2(t0)          # Atualiza a posição Y do personagem
+
+    # Verificar colisão com o chão
+    li t4, 224            # Limite inferior (240 - altura do personagem, 16px)
+    blt t3, t4, NO_COLLISION # Se a posição Y é menor que o limite, não há colisão
+
+    # Se houver colisão, ajuste a posição e zere a velocidade vertical
+    li t3, 224            # Ajusta a posição Y para o limite inferior
+    sh t3, 2(t0)          # Atualiza a posição Y do personagem
+    li t2, 0              # Zera a velocidade vertical
+    sh t2, 0(t1)          # Atualiza a velocidade vertical
+
+NO_COLLISION:
     # Alternar frame apenas para o personagem
-    la a0,felix           # Carrega o endereço da imagem do personagem "felix" em a0
+    la t1,SPRITE_PTR      # Carrega o endereço do ponteiro do sprite
+    lw a0,0(t1)           # Carrega o endereço do sprite atual
     lh a1,0(t0)           # Carrega a posição X atual
     lh a2,2(t0)           # Carrega a posição Y atual
     mv a3,s0              # Alterna o frame para o personagem
