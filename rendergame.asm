@@ -49,11 +49,11 @@ GAME_LOOP:
     sh t3, 2(t0)          # Atualiza a posição Y do personagem
 
     # Verificar colisão com o chão
-    li t4, 224            # Limite inferior (240 - altura do personagem, 16px)
+    li t4, 216            # Limite inferior (240 - altura do personagem, 16px)
     blt t3, t4, NO_COLLISION # Se a posição Y é menor que o limite, não há colisão
 
     # Se houver colisão, ajuste a posição e zere a velocidade vertical
-    li t3, 224            # Ajusta a posição Y para o limite inferior
+    li t3, 215           # Ajusta a posição Y para o limite inferior
     sh t3, 2(t0)          # Atualiza a posição Y do personagem
     li t2, 0              # Zera a velocidade vertical
     sh t2, 0(t1)          # Atualiza a velocidade vertical
@@ -90,7 +90,7 @@ KEY2:
     beq t0,zero,FIM       # Se não há tecla pressionada, pula para FIM
     lw t2,4(t1)           # Lê o valor da tecla pressionada
 
-    li t0,'w'             # Carrega o valor ASCII da tecla 'w'
+    li t0,' '             # Carrega o valor ASCII da tecla 'w'
     beq t2,t0,WALK_UP     # Se 'w' é pressionado, pula para WALK_UP
     
     li t0,'a'             # Carrega o valor ASCII da tecla 'a'
@@ -156,9 +156,9 @@ WALK_DOWN:
 
     lh t1,2(t0)           # Carrega a posição Y atual
     addi t1,t1,16         # Move 16 pixels para baixo
-    li t2,224             # Limite inferior (240 - altura do personagem, 16px)
+    li t2,200             # Limite inferior (240 - altura do personagem, 16px)
     blt t1,t2,OK_DOWN     # Verifica se está dentro da borda inferior (< 224)
-    li t1,224             # Se ultrapassar, força posição Y = 224
+    li t1,216             # Se ultrapassar, força posição Y = 224
 OK_DOWN:
     sh t1,2(t0)           # Atualiza a posição Y
     ret                   # Retorna da função
