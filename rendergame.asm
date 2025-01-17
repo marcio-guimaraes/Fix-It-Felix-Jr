@@ -3,7 +3,7 @@ CHAR_POS: .half 145, 205       # Posição inicial do personagem (X, Y)
 OLD_CHAR_POS: .half 0, 0      # Última posição do personagem (X, Y)
 
 POINTS_X: .half 80, 110, 180, 210 # Posições X das quatro posições em cada linha
-POINTS_Y: .half 85, 205           # Posições Y das duas linhas
+POINTS_Y: .half 85, 145, 205       # Posições Y das três linhas
 
 .text
 SETUP:
@@ -45,7 +45,7 @@ GAME_LOOP:
     mv a3,s0              # Alterna o frame para o personagem
     call PRINT            # Chama a função PRINT para desenhar o personagem
 
-    # Atualizar LED (opcional)
+    # Atualizar LED (opcional), pro personagem não piscar na tela
     li t0,0xFF200604      # Carrega o endereço do LED
     sw s0,0(t0)           # Atualiza o LED com o valor de s0
     
@@ -152,11 +152,17 @@ MOVE_UP:
     la t2,POINTS_Y        # Carrega o endereço dos pontos Y
     lh t3,0(t2)           # Carrega o ponto Y 1
     lh t4,2(t2)           # Carrega o ponto Y 2
+    lh t5,4(t2)           # Carrega o ponto Y 3
 
     beq t1,t4,SET_Y1      # Se a posição atual é o ponto 2, move para o ponto 1
+    beq t1,t5,SET_Y2      # Se a posição atual é o ponto 3, move para o ponto 2
 
 SET_Y1:
     sh t3,2(t0)           # Atualiza a posição Y para o ponto 1
+    ret                   # Retorna da função
+
+SET_Y2:
+    sh t4,2(t0)           # Atualiza a posição Y para o ponto 2
     ret                   # Retorna da função
 
 MOVE_DOWN: 
@@ -169,11 +175,18 @@ MOVE_DOWN:
     la t2,POINTS_Y        # Carrega o endereço dos pontos Y
     lh t3,0(t2)           # Carrega o ponto Y 1
     lh t4,2(t2)           # Carrega o ponto Y 2
+    lh t5,4(t2)           # Carrega o ponto Y 3
 
     beq t1,t3,SET_Y2      # Se a posição atual é o ponto 1, move para o ponto 2
+    beq t1,t4,SET_Y3      # Se a posição atual é o ponto 2, move para o ponto 3
+    ret
 
 SET_Y2:
     sh t4,2(t0)           # Atualiza a posição Y para o ponto 2
+    ret                   # Retorna da função
+
+SET_Y3:
+    sh t5,2(t0)           # Atualiza a posição Y para o ponto 3
     ret                   # Retorna da função
 
 PRINT:
