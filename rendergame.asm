@@ -1,8 +1,9 @@
 .data
-CHAR_POS: .half 50,100       # Posição inicial do personagem (X, Y)
-OLD_CHAR_POS: .half 0,0      # Última posição do personagem (X, Y)
+CHAR_POS: .half 145, 205       # Posição inicial do personagem (X, Y)
+OLD_CHAR_POS: .half 0, 0      # Última posição do personagem (X, Y)
 
-POINTS_X: .half 85, 117, 155 # Posições X dos três pontos
+POINTS_X: .half 80, 110, 180, 210 # Posições X das quatro posições em cada linha
+POINTS_Y: .half 85, 205           # Posições Y das duas linhas
 
 .text
 SETUP:
@@ -73,6 +74,12 @@ KEY2:
     li t0,'d'             # Carrega o valor ASCII da tecla 'd'
     beq t2,t0,MOVE_RIGHT  # Se 'd' é pressionado, pula para MOVE_RIGHT
 
+    li t0,'w'             # Carrega o valor ASCII da tecla 'w'
+    beq t2,t0,MOVE_UP     # Se 'w' é pressionado, pula para MOVE_UP
+
+    li t0,'s'             # Carrega o valor ASCII da tecla 's'
+    beq t2,t0,MOVE_DOWN   # Se 's' é pressionado, pula para MOVE_DOWN
+
 FIM:    
     ret                   # Retorna da função
 
@@ -87,9 +94,11 @@ MOVE_LEFT:
     lh t3,0(t2)           # Carrega o ponto X 1
     lh t4,2(t2)           # Carrega o ponto X 2
     lh t5,4(t2)           # Carrega o ponto X 3
+    lh t6,6(t2)           # Carrega o ponto X 4
 
     beq t1,t4,SET_X1      # Se a posição atual é o ponto 2, move para o ponto 1
     beq t1,t5,SET_X2      # Se a posição atual é o ponto 3, move para o ponto 2
+    beq t1,t6,SET_X3      # Se a posição atual é o ponto 4, move para o ponto 3
 
 SET_X1:
     sh t3,0(t0)           # Atualiza a posição X para o ponto 1
@@ -97,6 +106,10 @@ SET_X1:
 
 SET_X2:
     sh t4,0(t0)           # Atualiza a posição X para o ponto 2
+    ret                   # Retorna da função
+
+SET_X3:
+    sh t5,0(t0)           # Atualiza a posição X para o ponto 3
     ret                   # Retorna da função
 
 MOVE_RIGHT: 
@@ -110,17 +123,57 @@ MOVE_RIGHT:
     lh t3,0(t2)           # Carrega o ponto X 1
     lh t4,2(t2)           # Carrega o ponto X 2
     lh t5,4(t2)           # Carrega o ponto X 3
+    lh t6,6(t2)           # Carrega o ponto X 4
 
     beq t1,t3,SET_X2_RIGHT # Se a posição atual é o ponto 1, move para o ponto 2
-    beq t1,t4,SET_X3      # Se a posição atual é o ponto 2, move para o ponto 3
+    beq t1,t4,SET_X3_RIGHT # Se a posição atual é o ponto 2, move para o ponto 3
+    beq t1,t5,SET_X4      # Se a posição atual é o ponto 3, move para o ponto 4
     ret
 
 SET_X2_RIGHT:
     sh t4,0(t0)           # Atualiza a posição X para o ponto 2
     ret                   # Retorna da função
 
-SET_X3:
+SET_X3_RIGHT:
     sh t5,0(t0)           # Atualiza a posição X para o ponto 3
+    ret                   # Retorna da função
+
+SET_X4:
+    sh t6,0(t0)           # Atualiza a posição X para o ponto 4
+    ret                   # Retorna da função
+
+MOVE_UP: 
+    la t0,CHAR_POS        # Carrega o endereço da posição atual do personagem
+    la t1,OLD_CHAR_POS    # Carrega o endereço da última posição do personagem
+    lw t2,0(t0)           # Carrega a posição atual
+    sw t2,0(t1)           # Salva a posição atual como a última posição
+
+    lh t1,2(t0)           # Carrega a posição Y atual
+    la t2,POINTS_Y        # Carrega o endereço dos pontos Y
+    lh t3,0(t2)           # Carrega o ponto Y 1
+    lh t4,2(t2)           # Carrega o ponto Y 2
+
+    beq t1,t4,SET_Y1      # Se a posição atual é o ponto 2, move para o ponto 1
+
+SET_Y1:
+    sh t3,2(t0)           # Atualiza a posição Y para o ponto 1
+    ret                   # Retorna da função
+
+MOVE_DOWN: 
+    la t0,CHAR_POS        # Carrega o endereço da posição atual do personagem
+    la t1,OLD_CHAR_POS    # Carrega o endereço da última posição do personagem
+    lw t2,0(t0)           # Carrega a posição atual
+    sw t2,0(t1)           # Salva a posição atual como a última posição
+
+    lh t1,2(t0)           # Carrega a posição Y atual
+    la t2,POINTS_Y        # Carrega o endereço dos pontos Y
+    lh t3,0(t2)           # Carrega o ponto Y 1
+    lh t4,2(t2)           # Carrega o ponto Y 2
+
+    beq t1,t3,SET_Y2      # Se a posição atual é o ponto 1, move para o ponto 2
+
+SET_Y2:
+    sh t4,2(t0)           # Atualiza a posição Y para o ponto 2
     ret                   # Retorna da função
 
 PRINT:
