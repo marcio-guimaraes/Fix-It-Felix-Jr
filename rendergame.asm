@@ -231,3 +231,5 @@ PRINT_LINHA:
 .include "imagens/fundo.data"        # Inclui dados da imagem do fundo
 .include "imagens/tile.data"         # Inclui dados da imagem do tile
 .include "imagens/telainicial.data"  # Inclui dados da imagem da tela inicial
+.include "MACROSv24.s"
+.include "SYSTEMv24.s"
