@@ -1,4 +1,16 @@
 .data
+
+notas: .word 9, 0, 0,
+67, 1000, 0,
+74, 1000, 0,
+70, 1500, 0,
+69, 500, 0,
+67, 500, 0,
+70, 500, 0,
+69, 500, 0,
+67, 500, 0,
+66, 500, 0,
+
 CHAR_POS: .half 145, 205       # Posi��o inicial do personagem (X, Y)
 OLD_CHAR_POS: .half 0, 0      # �ltima posi��o do personagem (X, Y)
 
@@ -33,6 +45,49 @@ LOOP:
     call PRINT            # Chama a fun��o PRINT para desenhar o fundo novamente
 
 GAME_LOOP:
+    
+    la s1, notas
+    lw s2, 0(s1) #quantas notas existem
+    lw s3, 4(s1) #em que nota eu estou
+    lw s4, 8(s1) #quand a ultima nota foi tocada do 6
+
+    li t0, 12
+    mul s5, t0, s3
+    add s5, s5, s1  #endereço da nota atual do 6
+
+    li a7, 30
+    ecall
+
+    sub s6, a0, s4 # quanto tempo já se passou desde que a última nota foi tocada
+
+    lw t1, 4(s5)
+    bgtu t1, s6, MF0 
+            #se já for pra tocar a próxima nota do, 6
+	
+    	bne s3, s2, MF1
+    		li s3, 0
+    		mv s5, s1
+    	MF1:
+            addi s5, s5, 12
+
+            li a7, 31
+            lw a0, 0(s5)
+            lw a1, 4(s5)
+            li a2, 0
+            li a3, 60
+            ecall
+
+            li a7, 30
+            ecall
+
+            sw a0, 8(s1)
+
+            addi s3, s3, 1
+            sw s3, 4(s1)
+        
+    MF0:
+
+
     call KEY2             # Chama a fun��o KEY2 para verificar a tecla pressionada
     xori s0,s0,1          # Alterna o frame buffer (0 ou 1)
     
@@ -178,8 +233,8 @@ MOVE_DOWN:
     ret
 
 SET_Y2:
-    sh t4,2(t0)           # Atualiza a posi��o Y para o ponto 2
-    ret                   # Retorna da fun��o
+    sh t4,2(t0)           
+    ret                   
 
 SET_Y3:
     sh t5,2(t0)           # Atualiza a posi��o Y para o ponto 3
@@ -229,3 +284,4 @@ PRINT_LINHA:
 .include "imagens/telainicial.data"  # Inclui dados da imagem da tela inicial
 .include "MACROSv24.s"
 .include "SYSTEMv24.s"
+
