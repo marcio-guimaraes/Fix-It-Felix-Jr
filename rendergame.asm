@@ -1,9 +1,21 @@
 .data
+.include "imagens/felix.data"        # Inclui dados da imagem do personagem
+.include "imagens/fundo.data"        # Inclui dados da imagem do fundo
+.include "imagens/tile.data"         # Inclui dados da imagem do tile
+.include "imagens/telainicial.data"  # Inclui dados da imagem da tela inicial
+.include "MACROSv24.s"
+.include "SYSTEMv24.s"
+
 CHAR_POS: .half 145, 205       # Posição inicial do personagem (X, Y)
 OLD_CHAR_POS: .half 0, 0      # Última posição do personagem (X, Y)
 
 POINTS_X: .half 80, 110, 180, 210 # Posições X das quatro posições em cada linha
 POINTS_Y: .half 85, 145, 205       # Posições Y das três linhas
+
+
+###################################################################
+########################## FIM DOS DADOS ##########################
+###################################################################
 
 .text
 SETUP:
@@ -225,11 +237,3 @@ PRINT_LINHA:
     addi t2,t2,1          # Incrementa contador de linha
     blt t2,t5,PRINT_LINHA # Continua até o final da imagem
     ret                   # Retorna da função
-
-.data
-.include "imagens/felix.data"        # Inclui dados da imagem do personagem
-.include "imagens/fundo.data"        # Inclui dados da imagem do fundo
-.include "imagens/tile.data"         # Inclui dados da imagem do tile
-.include "imagens/telainicial.data"  # Inclui dados da imagem da tela inicial
-.include "MACROSv24.s"
-.include "SYSTEMv24.s"
