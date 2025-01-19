@@ -12,10 +12,11 @@ notas: .word 9, 0, 0,
 66, 500, 0,
 
 CHAR_POS: .half 145, 205       # posição inicial do personagem (X, Y)
-OLD_CHAR_POS: .half 0, 0      # última posição do personagem (X, Y)
+OLD_CHAR_POS: .half 0, 0       # última posição do personagem (X, Y)
 
-POINTS_X: .half 80, 110, 180, 210 # Posições X das quatro posições em cada linha
-POINTS_Y: .half 85, 145, 205       # Posições Y das três linhas
+POINTS_X: .half 80, 110, 180, 210  # Posições X das quatro posições em cada linha
+POINTS_Y: .half 75, 132, 189       # Posições Y das três linhas
+
 
 ###############################################################
 ###############################################################
@@ -30,6 +31,7 @@ POINTS_Y: .half 85, 145, 205       # Posições Y das três linhas
 
 .text
 SETUP:
+   
     la a0,telainicial     # Carrega o endereço da imagem da tela inicial em a0
     li a1,0               # Coordenada X inicial
     li a2,0               # Coordenada Y inicial
@@ -54,6 +56,9 @@ LOOP:
     call PRINT            # Chama a função PRINT para desenhar o fundo
     li a3,1               # Framebuffer 1
     call PRINT            # Chama a função PRINT para desenhar o fundo novamente
+
+
+    
 
 ###############################################################
 ###############################################################
@@ -142,7 +147,20 @@ GAME_LOOP:
     mv a3,s0               # Alterna o frame para o tile
     xori a3,a3,1           # Alterna o frame buffer
     call PRINT             # Chama a função PRINT para desenhar o tile
-    
+
+    #########################################################
+    ########### RENDERIZAÇÃO DO RALPH #######################
+    #########################################################
+
+    # Ralph 
+    la a0, ralph3              # Endereço da imagem
+    li a1, 80                  # Coordenada X (ajustar para centralizar)
+    li a2, 5                   # Coordenada Y (no topo da tela)
+    li a3, 0                   # Framebuffer 0
+    call PRINT
+    li a3, 1                   # Framebuffer 1
+    call PRINT
+
     j GAME_LOOP            # Volta para o início do loop do jogo
 
 
@@ -335,9 +353,15 @@ PRINT_LINHA:
 ################################
 # Quando esses dados são movidos pra cima o código buga
 .data
-.include "imagens/felix.data"        # Inclui dados da imagem do personagem
-.include "imagens/fundo.data"        # Inclui dados da imagem do fundo
-.include "imagens/tile.data"         # Inclui dados da imagem do tile
-.include "imagens/telainicial.data"  # Inclui dados da imagem da tela inicial
+.include "imagens/felix.data"            # Inclui dados da imagem do personagem
+.include "imagens/fundo.data"            # Inclui dados da imagem do fundo
+.include "imagens/tile.data"             # Inclui dados da imagem do tile
+.include "imagens/telainicial.data"      # Inclui dados da imagem da tela inicial
+.include "imagens/ralph3.data"           # Inclui dados da imagem do ralph
+.include "imagens/ralphpDireita.data"    # Inclui o ralph 
+.include "imagens/ralphpDireita2.data"   # Inclui o ralph 
+.include "imagens/ralphpEsquerda.data"   # Inclui o ralph 
+.include "imagens/ralphpEsquerda2.data"  # Inclui o ralph 
 .include "MACROSv24.s"
 .include "SYSTEMv24.s"
+
