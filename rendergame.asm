@@ -153,7 +153,7 @@ GAME_LOOP:
     #########################################################
 
     # Ralph 
-    la a0, ralph3              # Endereço da imagem
+    la a0, ralph3           # Endereço da imagem
     li a1, 80                  # Coordenada X (ajustar para centralizar)
     li a2, 5                   # Coordenada Y (no topo da tela)
     li a3, 0                   # Framebuffer 0
