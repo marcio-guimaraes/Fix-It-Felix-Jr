@@ -17,6 +17,11 @@ OLD_CHAR_POS: .half 0, 0       # última posição do personagem (X, Y)
 POINTS_X: .half 80, 110, 180, 210  # Posições X das quatro posições em cada linha
 POINTS_Y: .half 75, 132, 189       # Posições Y das três linhas
 
+RALPH_POS: .half 80, 5         # Posição atual do Ralph (X, Y)
+RALPH_TARGET: .half 180, 132   # Posição de destino do Ralph (X, Y)
+RALPH_STEP: .half 5, 5         # Incrementos (X, Y) para movimentação
+RALPH_DIR: .byte 1             # Direção (1 = direita, -1 = esquerda)
+
 
 ###############################################################
 ###############################################################
@@ -161,7 +166,68 @@ GAME_LOOP:
     li a3, 1                   # Framebuffer 1
     call PRINT
 
+    
+
+        # Movimentação do Ralph
+    la t0, RALPH_POS       # Carrega a posição atual do Ralph
+    la t1, RALPH_TARGET    # Carrega a posição de destino do Ralph
+    la t2, RALPH_STEP      # Carrega os incrementos (X, Y)
+
+    lh t3, 0(t0)           # Posição X atual do Ralph
+    lh t4, 2(t0)           # Posição Y atual do Ralph
+    lh t5, 0(t1)           # Posição X do destino
+    lh t6, 2(t1)           # Posição Y do destino
+    lh t7, 0(t2)           # Incremento X
+    lh t8, 2(t2)           # Incremento Y
+
+    # Verifica se o Ralph atingiu o destino no eixo X
+    blt t3, t5, MOVE_RALPH_RIGHT
+    bgt t3, t5, MOVE_RALPH_LEFT
+
+    # Verifica se o Ralph atingiu o destino no eixo Y
+    blt t4, t6, MOVE_RALPH_DOWN
+    bgt t4, t6, MOVE_RALPH_UP
+
+    # Se atingiu o destino, atualiza o próximo alvo
+    li t9, 1                # Define nova direção
+    sb t9, RALPH_DIR        # Alterna direção (opcional)
+    li t3, 80               # Novo destino X (ajustar conforme lógica)
+    li t4, 5                # Novo destino Y (ajustar conforme lógica)
+    sh t3, 0(t1)            # Atualiza destino X
+    sh t4, 2(t1)            # Atualiza destino Y
+    j RENDER_RALPH          # Pula para renderizar o Ralph
+
+MOVE_RALPH_RIGHT:
+    add t3, t3, t7          # Incrementa posição X para a direita
+    sh t3, 0(t0)            # Atualiza posição X
+    j RENDER_RALPH
+
+MOVE_RALPH_LEFT:
+    sub t3, t3, t7          # Decrementa posição X para a esquerda
+    sh t3, 0(t0)            # Atualiza posição X
+    j RENDER_RALPH
+
+MOVE_RALPH_DOWN:
+    add t4, t4, t8          # Incrementa posição Y para baixo
+    sh t4, 2(t0)            # Atualiza posição Y
+    j RENDER_RALPH
+
+MOVE_RALPH_UP:
+    sub t4, t4, t8          # Decrementa posição Y para cima
+    sh t4, 2(t0)            # Atualiza posição Y
+
+RENDER_RALPH:
+    # Desenha o Ralph na nova posição
+    la a0, ralph3           # Endereço da imagem do Ralph
+    lh a1, 0(t0)            # Posição X atual do Ralph
+    lh a2, 2(t0)            # Posição Y atual do Ralph
+    li a3, 0                # Framebuffer 0
+    call PRINT              # Chama a função PRINT para desenhar
+    li a3, 1                # Framebuffer 1
+    call PRINT              # Chama a função PRINT para o outro framebuffer
+
     j GAME_LOOP            # Volta para o início do loop do jogo
+
 
 
 ###############################################################
