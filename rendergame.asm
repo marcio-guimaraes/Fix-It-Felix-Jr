@@ -11,7 +11,9 @@
 .include "imagens/ralphpEsquerda2.data"  # Inclui o ralph 
 .include "imagens/AndarPDireitaFelix.data"
 .include "imagens/AndarPEsquerdaFelix.data"
-
+.include "imagens/FelixOutroLado.data"
+.include "imagens/FelixOutroLadoRebaixado.data"
+.include "imagens/FelixRebaixado.data"
 #teste
 notas: .word 9, 0, 0,
 67, 1000, 0,
@@ -30,7 +32,7 @@ OLD_CHAR_POS: .half 0, 0       # última posição do personagem (X, Y)
 POINTS_X: .half 80, 110, 180, 210  # Posições X das quatro posições em cada linha
 POINTS_Y: .half 75, 132, 189       # Posições Y das três linhas
 FELIX_DIR: .word 1
-
+FELIX_FRAME: .word 0
 
 ###############################################################
 ###############################################################
@@ -338,11 +340,43 @@ SELECT_FELIX:
     beq t0, t1, FELIX_LEFT
 
     FELIX_RIGHT:
-        la a0, AndarPDireitaFelix
+        la t0, FELIX_FRAME
+        lw t0,0(t0)
+        li t1,16
+        bge t0,t1,NOT_REBAIXADO
+            addi t0,t0,1
+            andi t0,t0,32
+            la t1, FELIX_FRAME
+            sw t0,0(t1)
+            la a0, FelixRebaixado
+            ret
+        NOT_REBAIXADO:
+            addi t0,t0,1
+            andi t0,t0,1
+            la t1, FELIX_FRAME
+            sw t0,0(t1)
+        la a0, felix
         ret
     FELIX_LEFT:
-        la a0, AndarPEsquerdaFelix
-     ret
+        la t0, FELIX_FRAME
+        lw t0,0(t0)
+        li t1,16
+        bge t0,t1,NOT_REBAIXADO_LEFT
+            addi t0,t0,1
+            andi t0,t0,32
+            la t1, FELIX_FRAME
+            sw t0,0(t1)
+            la a0, FelixOutroLadoRebaixado
+            ret
+        NOT_REBAIXADO_LEFT:
+        addi t0,t0,1
+        andi t0,t0,1
+        la t1, FELIX_FRAME
+        sw t0,0(t1)
+        la a0, FelixOutroLado
+        ret
+        
+    
 
 #########################################################
 #################### FUNÇÃO DE PRINT ####################
