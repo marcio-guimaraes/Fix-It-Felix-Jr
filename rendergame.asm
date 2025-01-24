@@ -9,6 +9,9 @@
 .include "imagens/ralphpDireita2.data"   # Inclui o ralph 
 .include "imagens/ralphpEsquerda.data"   # Inclui o ralph 
 .include "imagens/ralphpEsquerda2.data"  # Inclui o ralph 
+.include "imagens/AndarPDireitaFelix.data"
+.include "imagens/AndarPEsquerdaFelix.data"
+
 #teste
 notas: .word 9, 0, 0,
 67, 1000, 0,
@@ -133,14 +136,14 @@ GAME_LOOP:
 ########### RENDERIZAÇÃO DO FUNDO E DO FELIX ############
 #########################################################
 
+    call SELECT_FELIX
+
     call KEY2             # Chama a função KEY2 para verificar a tecla pressionada
     xori s0,s0,1          # Alterna o frame buffer (0 ou 1)
     
     la t0,CHAR_POS        # Carrega o endereço da posição atual do personagem
-
-    #call SELECT_FELIX
+    
     # Alternar frame apenas para o personagem
-    la a0,felix           # Carrega o endereço da imagem do personagem "felix" em a0
     lh a1,0(t0)           # Carrega a posição X atual
     lh a2,2(t0)           # Carrega a posição Y atual
     mv a3,s0              # Alterna o frame para o personagem
@@ -216,7 +219,11 @@ FIM:
 ########## LÓGICA DE MOVIMENTAÇÃO DO PERSONAGEM ########## 
 ##########################################################
 
-MOVE_LEFT: 
+MOVE_LEFT:
+    la t0,FELIX_DIR
+    li t1,1
+    sw t1,0(t0)
+
     la t0,CHAR_POS        # Carrega o endereço da posição atual do personagem
     la t1,OLD_CHAR_POS    # Carrega o endereço da última posição do personagem
     lw t2,0(t0)           # Carrega a posição atual
@@ -245,7 +252,11 @@ SET_X3:
     sh t5,0(t0)           # Atualiza a posição X para o ponto 3
     ret                   # Retorna da função
 
-MOVE_RIGHT: 
+MOVE_RIGHT:
+    la t0,FELIX_DIR
+    li t1,0
+    sw t1,0(t0)
+
     la t0,CHAR_POS        # Carrega o endereço da posição atual do personagem
     la t1,OLD_CHAR_POS    # Carrega o endereço da última posição do personagem
     lw t2,0(t0)           # Carrega a posição atual
