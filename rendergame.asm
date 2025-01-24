@@ -1,5 +1,15 @@
 .data
 
+.include "imagens/felix.data"            # Inclui dados da imagem do personagem
+.include "imagens/fundo.data"            # Inclui dados da imagem do fundo
+.include "imagens/tile.data"             # Inclui dados da imagem do tile
+.include "imagens/telainicial.data"      # Inclui dados da imagem da tela inicial
+.include "imagens/ralph3.data"           # Inclui dados da imagem do ralph
+.include "imagens/ralphpDireita.data"    # Inclui o ralph 
+.include "imagens/ralphpDireita2.data"   # Inclui o ralph 
+.include "imagens/ralphpEsquerda.data"   # Inclui o ralph 
+.include "imagens/ralphpEsquerda2.data"  # Inclui o ralph 
+#teste
 notas: .word 9, 0, 0,
 67, 1000, 0,
 74, 1000, 0,
@@ -16,7 +26,7 @@ OLD_CHAR_POS: .half 0, 0       # última posição do personagem (X, Y)
 
 POINTS_X: .half 80, 110, 180, 210  # Posições X das quatro posições em cada linha
 POINTS_Y: .half 75, 132, 189       # Posições Y das três linhas
-
+FELIX_DIR: .word 1
 
 
 ###############################################################
@@ -115,7 +125,7 @@ GAME_LOOP:
     MF0:
 
 ##############################################
-########### INÍCIO DO LOOP MÚSICA ############
+############# FIM DO LOOP MÚSICA #############
 ##############################################
 
 
@@ -128,6 +138,7 @@ GAME_LOOP:
     
     la t0,CHAR_POS        # Carrega o endereço da posição atual do personagem
 
+    #call SELECT_FELIX
     # Alternar frame apenas para o personagem
     la a0,felix           # Carrega o endereço da imagem do personagem "felix" em a0
     lh a1,0(t0)           # Carrega a posição X atual
@@ -308,6 +319,20 @@ SET_Y3:
     ret                   # Retorna da função
 
 
+SELECT_FELIX:
+    la t0, FELIX_DIR
+    lw t0, 0(t0)
+    beq t0, zero, FELIX_RIGHT
+    li t1, 1
+    beq t0, t1, FELIX_LEFT
+
+    FELIX_RIGHT:
+        la a0, AndarPDireitaFelix
+        ret
+    FELIX_LEFT:
+        la a0, AndarPEsquerdaFelix
+     ret
+
 #########################################################
 #################### FUNÇÃO DE PRINT ####################
 #########################################################
@@ -350,21 +375,8 @@ PRINT_LINHA:
     ret                   # Retorna da função
 
 
+
 ################################
 ########## MAIS DADOS ##########
 ################################
 # Quando esses dados são movidos pra cima o código buga
-.data
-.include "imagens/felix.data"            # Inclui dados da imagem do personagem
-.include "imagens/fundo.data"            # Inclui dados da imagem do fundo
-.include "imagens/tile.data"             # Inclui dados da imagem do tile
-.include "imagens/telainicial.data"      # Inclui dados da imagem da tela inicial
-.include "imagens/ralph3.data"           # Inclui dados da imagem do ralph
-.include "imagens/ralphpDireita.data"    # Inclui o ralph 
-.include "imagens/ralphpDireita2.data"   # Inclui o ralph 
-.include "imagens/ralphpEsquerda.data"   # Inclui o ralph 
-.include "imagens/ralphpEsquerda2.data"  # Inclui o ralph 
-.include "MACROSv24.s"
-.include "SYSTEMv24.s"
-
-#teste
