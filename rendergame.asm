@@ -14,6 +14,9 @@
 .include "imagens/FelixOutroLado.data"
 .include "imagens/FelixOutroLadoRebaixado.data"
 .include "imagens/FelixRebaixado.data"
+.include "imagens/AndarSemMarteloPDireitaFelix.data"
+.include "imagens/AndarSemMarteloPEsquerdaFelix.data"
+
 #teste
 notas: .word 9, 0, 0,
 67, 1000, 0,
@@ -26,24 +29,26 @@ notas: .word 9, 0, 0,
 67, 500, 0,
 66, 500, 0,
 
-CHAR_POS: .half 145, 205       # posição inicial do personagem (X, Y)
+CHAR_POS: .half 80, 189       # posição inicial do personagem (X, Y)
 OLD_CHAR_POS: .half 0, 0       # última posição do personagem (X, Y)
+                    # A, x, y
+ANIMACAO_FELIX: .half 0, 80, 189
 
-POINTS_X: .half 80, 110, 180, 210  # Posições X das quatro posições em cada linha
-POINTS_Y: .half 75, 132, 189       # Posições Y das três linhas
-FELIX_DIR: .word 1
-FELIX_FRAME: .word 0
 
-###############################################################
-###############################################################
+
+# Posições X das quatro posições em cada linha
+FELIX_FRAME: .byte 0
+POINTS_X: .half 80, 110, 145, 180, 210  # Posições X das quatro posições em cada linha
+POINTS_Y: .half 75, 132, 189       # Posições Y das três linhas 
+                # Direita/esquerda, cima/baixo
+FELIX_DIR: .byte 1,                 3 
+
+
+
 ####################### FIM DOS DADOS #########################
-###############################################################
-###############################################################
 
-
-###############################################################
 ######### PRINTA TELA INICIAL E ESPERA TECLAR ALGO ############
-###############################################################
+
 
 .text
 SETUP:
@@ -72,21 +77,17 @@ LOOP:
     call PRINT            # Chama a função PRINT para desenhar o fundo
     li a3,1               # Framebuffer 1
     call PRINT            # Chama a função PRINT para desenhar o fundo novamente
-
-
     
-
-###############################################################
-###############################################################
 ################### INICIO DO LOOP PRINCIPAL ##################
-###############################################################
-###############################################################
 
 GAME_LOOP:
 
-##############################################
+#Configurando fps do jogo
+li a0, 30
+li a7, 32
+ecall
+
 ########### INÍCIO DO LOOP MÚSICA ############
-##############################################
     
     la s1, notas
     lw s2, 0(s1) #quantas notas existem
@@ -129,20 +130,23 @@ GAME_LOOP:
         
     MF0:
 
-##############################################
 ############# FIM DO LOOP MÚSICA #############
-##############################################
 
-
-#########################################################
 ########### RENDERIZAÇÃO DO FUNDO E DO FELIX ############
-#########################################################
 
     call SELECT_FELIX
 
     call KEY2             # Chama a função KEY2 para verificar a tecla pressionada
     xori s0,s0,1          # Alterna o frame buffer (0 ou 1)
-    
+
+    la t0,ANIMACAO_FELIX
+    lh t1, 0(t0)
+    bnez t1, CALL_MOVE_FELIX_ANIMACAO
+    j DEPOIS_CALL_MOVE_FELIX_ANIMACAO
+    CALL_MOVE_FELIX_ANIMACAO:
+        call MOVE_FELIX_ANIMACAO
+    DEPOIS_CALL_MOVE_FELIX_ANIMACAO:
+
     la t0,CHAR_POS        # Carrega o endereço da posição atual do personagem
     
     # Alternar frame apenas para o personagem
@@ -165,9 +169,7 @@ GAME_LOOP:
     xori a3,a3,1           # Alterna o frame buffer
     call PRINT             # Chama a função PRINT para desenhar o tile
 
-    #########################################################
     ########### RENDERIZAÇÃO DO RALPH #######################
-    #########################################################
 
     # Ralph 
     la a0, ralph3           # Endereço da imagem
@@ -180,21 +182,14 @@ GAME_LOOP:
 
     j GAME_LOOP            # Volta para o início do loop do jogo
 
-
-
-###############################################################
-###############################################################
 ################### FIM DO LOOP PRINCIPAL #####################
-###############################################################
-###############################################################
-
-
-
-######################################################################
-########## ESPERA ENTRADA PARA A MOVIMENTAÇÃO DO PERSONAGEM ##########
-######################################################################
 
 KEY2:   
+    la t0,ANIMACAO_FELIX
+    lh t1, 0(t0)
+    bne t1, zero , FIM
+
+
     li t1,0xFF200000      # Carrega o endereço de controle do KDMMIO
     lw t0,0(t1)           # Lê bit de controle do teclado
     andi t0,t0,0x0001     # Máscara para o bit menos significativo
@@ -203,98 +198,122 @@ KEY2:
 
     li t0,'a'             # Carrega o valor ASCII da tecla 'a'
     beq t2,t0,MOVE_LEFT   # Se 'a' é pressionado, pula para MOVE_LEFT
-
     li t0,'d'             # Carrega o valor ASCII da tecla 'd'
     beq t2,t0,MOVE_RIGHT  # Se 'd' é pressionado, pula para MOVE_RIGHT
-
     li t0,'w'             # Carrega o valor ASCII da tecla 'w'
     beq t2,t0,MOVE_UP     # Se 'w' é pressionado, pula para MOVE_UP
-
     li t0,'s'             # Carrega o valor ASCII da tecla 's'
     beq t2,t0,MOVE_DOWN   # Se 's' é pressionado, pula para MOVE_DOWN
 
 FIM:    
     ret                   # Retorna da função
 
-
-##########################################################
 ########## LÓGICA DE MOVIMENTAÇÃO DO PERSONAGEM ########## 
-##########################################################
 
 MOVE_LEFT:
     la t0,FELIX_DIR
     li t1,1
-    sw t1,0(t0)
+    sb t1,0(t0)
+    la t0, ANIMACAO_FELIX
+    li t1, 1
+    sh t1, 0(t0)
+    la t2, CHAR_POS
+    lh t3, 2(t2) # t3 = y do personagem
+    sh t3, 4(t0) 
+    lh t3, 0(t2) # t3 = x do personagem
 
-    la t0,CHAR_POS        # Carrega o endereço da posição atual do personagem
-    la t1,OLD_CHAR_POS    # Carrega o endereço da última posição do personagem
-    lw t2,0(t0)           # Carrega a posição atual
-    sw t2,0(t1)           # Salva a posição atual como a última posição
-    
-    lh t1,0(t0)           # Carrega a posição X atual
+    # X alvo:
     la t2,POINTS_X        # Carrega o endereço dos pontos X
-    lh t3,0(t2)           # Carrega o ponto X 1
-    lh t4,2(t2)           # Carrega o ponto X 2
-    lh t5,4(t2)           # Carrega o ponto X 3
-    lh t6,6(t2)           # Carrega o ponto X 4
+    lh t6,0(t2)           # Carrega o ponto X 1
+    lh t1,2(t2)           # Carrega o ponto X 2
+    lh t4,4(t2)           # Carrega o ponto X 3
+    lh t5,6(t2)           # Carrega o ponto X 4  
+    lh s10,8(t2)          # Carrega o ponto X 5 
 
-    beq t1,t4,SET_X1      # Se a posição atual é o ponto 2, move para o ponto 1
-    beq t1,t5,SET_X2      # Se a posição atual é o ponto 3, move para o ponto 2
-    beq t1,t6,SET_X3      # Se a posição atual é o ponto 4, move para o ponto 3
+    beq t3,s10,SET_X4_LEFT # Se a posição atual é o ponto 1, move para o ponto 2
+    beq t3,t5,SET_X3_LEFT # Se a posição atual é o ponto 2, move para o ponto 3
+    beq t3, t4, SET_X2_LEFT
+    beq t3, t1, SET_X1_LEFT
+    j POS_SET_LEFT
 
-SET_X1:
-    sh t3,0(t0)           # Atualiza a posição X para o ponto 1
-    ret                   # Retorna da função
+    SET_X2_LEFT:
+        la t0, ANIMACAO_FELIX
+        sh t1,2(t0)           # Atualiza a posição X para o ponto 2
+        j POS_SET_LEFT
+    SET_X3_LEFT:
+        la t0, ANIMACAO_FELIX
+        sh t4,2(t0)           # Atualiza a posição X para o ponto 2
+        j POS_SET_LEFT
+    SET_X4_LEFT:
+        la t0, ANIMACAO_FELIX
+        sh t5,2(t0)           # Atualiza a posição X para o ponto 2
+        j POS_SET_LEFT
+    SET_X1_LEFT:
+        la t0, ANIMACAO_FELIX
+        sh t6,2(t0)           # Atualiza a posição X para o ponto 2
+        j POS_SET_LEFT
 
-SET_X2:
-    sh t4,0(t0)           # Atualiza a posição X para o ponto 2
-    ret                   # Retorna da função
-
-SET_X3:
-    sh t5,0(t0)           # Atualiza a posição X para o ponto 3
-    ret                   # Retorna da função
+    POS_SET_LEFT:
+    ret
 
 MOVE_RIGHT:
     la t0,FELIX_DIR
     li t1,0
-    sw t1,0(t0)
+    sb t1,0(t0)
+    la t0, ANIMACAO_FELIX
+    li t1, 1
+    sh t1, 0(t0)
+    la t2, CHAR_POS
+    lh t3, 2(t2) # t3 = y do personagem
+    sh t3, 4(t0)    # salva o y do personagem como alvo da animacao
+    lh t3, 0(t2) # t3 = x do personagem
 
-    la t0,CHAR_POS        # Carrega o endereço da posição atual do personagem
-    la t1,OLD_CHAR_POS    # Carrega o endereço da última posição do personagem
-    lw t2,0(t0)           # Carrega a posição atual
-    sw t2,0(t1)           # Salva a posição atual como a última posição
-
-    lh t1,0(t0)           # Carrega a posição X atual
+    # X alvo:
     la t2,POINTS_X        # Carrega o endereço dos pontos X
-    lh t3,0(t2)           # Carrega o ponto X 1
-    lh t4,2(t2)           # Carrega o ponto X 2
-    lh t5,4(t2)           # Carrega o ponto X 3
-    lh t6,6(t2)           # Carrega o ponto X 4
+    lh t0,0(t2)           # Carrega o ponto X 1
+    lh t1,2(t2)           # Carrega o ponto X 2
+    lh t4,4(t2)           # Carrega o ponto X 3
+    lh t5,6(t2)           # Carrega o ponto X 4
+    lh t6,8(t2)           # Carrega o ponto X 5
 
-    beq t1,t3,SET_X2_RIGHT # Se a posição atual é o ponto 1, move para o ponto 2
-    beq t1,t4,SET_X3_RIGHT # Se a posição atual é o ponto 2, move para o ponto 3
-    beq t1,t5,SET_X4      # Se a posição atual é o ponto 3, move para o ponto 4
+    beq t3,t0,SET_X2_RIGHT # Se a posição atual é o ponto 1, move para o ponto 2
+    beq t3,t1,SET_X3_RIGHT # Se a posição atual é o ponto 2, move para o ponto 3
+    beq t3, t4, SET_X4_RIGHT
+    beq t3, t5, SET_X5_RIGHT
+    j POS_SET_RIGHT
+
+    SET_X2_RIGHT:
+        la t0, ANIMACAO_FELIX
+        sh t1,2(t0)           # Atualiza a posição X para o ponto 2
+        j POS_SET_RIGHT
+    SET_X3_RIGHT:
+        la t0, ANIMACAO_FELIX
+        sh t4,2(t0)           # Atualiza a posição X para o ponto 2
+        j POS_SET_RIGHT
+    SET_X4_RIGHT:
+        la t0, ANIMACAO_FELIX
+        sh t5,2(t0)           # Atualiza a posição X para o ponto 2
+        j POS_SET_RIGHT
+    SET_X5_RIGHT:
+        la t0, ANIMACAO_FELIX
+        sh t6,2(t0)           # Atualiza a posição X para o ponto 2
+        j POS_SET_RIGHT
+
+    POS_SET_RIGHT:
     ret
 
-SET_X2_RIGHT:
-    sh t4,0(t0)           # Atualiza a posição X para o ponto 2
-    ret                   # Retorna da função
-
-SET_X3_RIGHT:
-    sh t5,0(t0)           # Atualiza a posição X para o ponto 3
-    ret                   # Retorna da função
-
-SET_X4:
-    sh t6,0(t0)           # Atualiza a posição X para o ponto 4
-    ret                   # Retorna da função
-
 MOVE_UP: 
-    la t0,CHAR_POS        # Carrega o endereço da posição atual do personagem
-    la t1,OLD_CHAR_POS    # Carrega o endereço da última posição do personagem
-    lw t2,0(t0)           # Carrega a posição atual
-    sw t2,0(t1)           # Salva a posição atual como a última posição
+    la t0,FELIX_DIR
+    li t1,0
+    sb t1,1(t0)
+    la t0, ANIMACAO_FELIX
+    li t1, 1
+    sh t1, 0(t0)
+    la t2, CHAR_POS
+    lh t3, 0(t2) # t3 = x do personagem
+    sh t3, 2(t0)    # salva o x do personagem como alvo da animacao
 
-    lh t1,2(t0)           # Carrega a posição Y atual
+    lh t1,2(t2)           # Carrega a posição Y atual
     la t2,POINTS_Y        # Carrega o endereço dos pontos Y
     lh t3,0(t2)           # Carrega o ponto Y 1
     lh t4,2(t2)           # Carrega o ponto Y 2
@@ -302,81 +321,106 @@ MOVE_UP:
 
     beq t1,t4,SET_Y1      # Se a posição atual é o ponto 2, move para o ponto 1
     beq t1,t5,SET_Y2      # Se a posição atual é o ponto 3, move para o ponto 2
-
+    ret
 SET_Y1:
-    sh t3,2(t0)           # Atualiza a posição Y para o ponto 1
+    sh t3,4(t0)           # Atualiza a posição Y para o ponto 1
     ret                   # Retorna da função
 
 MOVE_DOWN: 
-    la t0,CHAR_POS        # Carrega o endereço da posição atual do personagem
-    la t1,OLD_CHAR_POS    # Carrega o endereço da última posição do personagem
-    lw t2,0(t0)           # Carrega a posição atual
-    sw t2,0(t1)           # Salva a posição atual como a última posição
+    la t0,FELIX_DIR
+    li t1,1
+    sb t1,1(t0)
+    la t0, ANIMACAO_FELIX
+    li t1, 1
+    sh t1, 0(t0)
+    la t2, CHAR_POS
+    lh t3, 0(t2) # t3 = x do personagem
+    sh t3, 2(t0)    # salva o x do personagem como alvo da animacao
 
-    lh t1,2(t0)           # Carrega a posição Y atual
+    lh t1,2(t2)           # Carrega a posição Y atual
     la t2,POINTS_Y        # Carrega o endereço dos pontos Y
     lh t3,0(t2)           # Carrega o ponto Y 1
     lh t4,2(t2)           # Carrega o ponto Y 2
     lh t5,4(t2)           # Carrega o ponto Y 3
 
-    beq t1,t3,SET_Y2      # Se a posição atual para o ponto 1, move para o ponto 2
-    beq t1,t4,SET_Y3      # Se a posição atual para o ponto 2, move para o ponto 3
+    beq t1,t3,SET_Y2      # Se a posição atual é o ponto 1, move para o ponto 2
+    beq t1,t4,SET_Y3      # Se a posição atual é o ponto 3, move para o ponto 2
     ret
 
 SET_Y2:
-    sh t4,2(t0)           
+    sh t4,4(t0)           
     ret                   
 
 SET_Y3:
-    sh t5,2(t0)           # Atualiza a posição Y para o ponto 3
+    sh t5,4(t0)           # Atualiza a posição Y para o ponto 3
     ret                   # Retorna da função
 
-
 SELECT_FELIX:
+    
     la t0, FELIX_DIR
-    lw t0, 0(t0)
+    lb t0, 0(t0)
     beq t0, zero, FELIX_RIGHT
     li t1, 1
     beq t0, t1, FELIX_LEFT
 
     FELIX_RIGHT:
+        la t0, ANIMACAO_FELIX
+        lh t3, 0(t0)
         la t2, FELIX_FRAME
-        lw t0,0(t2)
-        li t1,255
-        bge t0,t1,NOT_REBAIXADO
-            addi t0,t0,1
-            andi t0,t0,511
-            sw t0,0(t2)
-            la a0, FelixRebaixado
-            ret
-        NOT_REBAIXADO:
-            addi t0,t0,1
-            andi t0,t0,511
-            sw t0,0(t2)
-            la a0, felix
-            ret
+        lb t0,0(t2)
+        beqz t3,NOT_PULANDO
+        la a0,AndarSemMarteloPDireitaFelix
+        ret
+        NOT_PULANDO:  
+            li t1,20
+            blt t0,t1,NOT_ZERA_ANIMACAO
+                li t0,0
+                sb t0,0(t2)
+                la a0, felix
+                ret
+            NOT_ZERA_ANIMACAO:
+            li t1,10
+            bge t0,t1,NOT_REBAIXADO
+                addi t0,t0,1
+                sb t0,0(t2)
+                la a0, FelixRebaixado
+                ret
+            NOT_REBAIXADO:
+                addi t0,t0,1
+                sb t0,0(t2)
+                la a0, felix
+                ret
     FELIX_LEFT:
+        la t0, ANIMACAO_FELIX
+        lh t3, 0(t0)
         la t2, FELIX_FRAME
-        lw t0,0(t2)
-        li t1,255
-        bge t0,t1,NOT_REBAIXADO_LEFT
-            addi t0,t0,1
-            andi t0,t0,511
-            sw t0,0(t2)
-            la a0, FelixOutroLadoRebaixado
-            ret
-        NOT_REBAIXADO_LEFT:
-            addi t0,t0,1
-            andi t0,t0,511
-            sw t0,0(t2)
-            la a0, FelixOutroLado
-            ret
-        
-    
-
-#########################################################
+        lb t0,0(t2)
+        beqz t3,NOT_PULANDO_LEFT
+        la a0,AndarSemMarteloPEsquerdaFelix
+        ret
+        NOT_PULANDO_LEFT:
+            li t1,20
+            blt t0,t1,NOT_ZERA_ANIMACAO_LEFT
+                li t0,0
+                sb t0,0(t2)
+                la a0, FelixOutroLado
+                ret
+            NOT_ZERA_ANIMACAO_LEFT:
+            li t1,10
+            bge t0,t1,NOT_REBAIXADO_LEFT
+                addi t0,t0,1
+                andi t0,t0,255
+                sb t0,0(t2)
+                la a0, FelixOutroLadoRebaixado
+                ret
+            NOT_REBAIXADO_LEFT:
+                addi t0,t0,1
+                andi t0,t0,255
+                sb t0,0(t2)
+                la a0, FelixOutroLado
+                ret
+            
 #################### FUNÇÃO DE PRINT ####################
-#########################################################
 
 PRINT:
     li t0,0xFF0           # Base do framebuffer
@@ -415,9 +459,61 @@ PRINT_LINHA:
     blt t2,t5,PRINT_LINHA # Continua até o final da imagem
     ret                   # Retorna da função
 
+MOVE_FELIX_ANIMACAO:
+    la t0, ANIMACAO_FELIX 
+    la t3, CHAR_POS
+    la t2, FELIX_DIR
+    lb t2, 0(t2)
+    lh t1, 4(t0) # t1 = y alvo
+    lh t4, 2(t3) # t4 = y atual do personagem
 
+    la t6, FELIX_DIR # t6 = endereço da direção do personagem
+    lb t5, 1(t6) # t5 = direção do personagem
+    beqz t5,MOVE_CIMA # se o personagem está acima do alvo, move para baixo
+    li s10, 1
+    beq t5, s10, MOVE_BAIXO # se o personagem está abaixo do alvo, move para cima
+    j POS_MOVE_DIAGONAL
+    MOVE_CIMA:
+        blt t4,t1,FIM_ANIMACAO_FELIX # se o personagem já chegou no alvo, termina a animação
+        addi t4, t4,-6 # se o personagem ainda não chegou no alvo, move para cima
+        sh t4, 2(t3) # atualiza a posição do personagem
+        j DEPOIS_FIM_ANIMACAO_FELIX
+    MOVE_BAIXO:
 
-################################
-########## MAIS DADOS ##########
-################################
-# Quando esses dados são movidos pra cima o código buga
+        bge t4,t1,FIM_ANIMACAO_FELIX # se o personagem já chegou no alvo, termina a animação
+        addi t4,t4,6 # se o personagem ainda não chegou no alvo, move para baixo
+        sh t4, 2(t3) # atualiza a posição do personagem
+        j DEPOIS_FIM_ANIMACAO_FELIX
+    POS_MOVE_DIAGONAL:
+
+    lh t1, 2(t0) # t1 = x alvo
+    lh t4, 0(t3) # t4 = x atual do personagem
+
+    la t2, FELIX_DIR
+    lb t2, 0(t2)
+    beq t2, zero, MOVE_DIREITA
+    MOVE_ESQUERDA:
+        ble t4, t1, FIM_ANIMACAO_FELIX # se o personagem já chegou no alvo, termina a animação
+        addi t4, t4, -4 # se o personagem ainda não chegou no alvo, move para esquerda
+        sh t4, 0(t3) # atualiza a posição do personagem
+        j DEPOIS_FIM_ANIMACAO_FELIX
+
+    MOVE_DIREITA:
+        bge t4, t1, FIM_ANIMACAO_FELIX # se o personagem já chegou no alvo, termina a animação
+        addi t4, t4, 4 # se o personagem ainda não chegou no alvo, move para direita
+        sh t4, 0(t3) # atualiza a posição do personagem
+        j DEPOIS_FIM_ANIMACAO_FELIX
+    FIM_ANIMACAO_FELIX:
+        la t0,FELIX_DIR
+        li t1,3
+        sb t1,1(t0)
+        la t0, ANIMACAO_FELIX
+        li t1, 0
+        sh t1, 0(t0)    #salvando o status da animacao pra 0
+        la t2, CHAR_POS #carregando a posicao do personagem
+        lh t3, 2(t0)   #carregando o x alvo da animacao
+        sh t3, 0(t2)  #atualizando a posicao do personagem
+        lh t3, 4(t0)   #carregando o y alvo da animacao
+        sh t3, 2(t2)  #atualizando a posicao do personagem
+    DEPOIS_FIM_ANIMACAO_FELIX:
+        ret 
