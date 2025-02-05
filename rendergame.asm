@@ -33,6 +33,11 @@ CHAR_POS: .half 80, 189       # posição inicial do personagem (X, Y)
 OLD_CHAR_POS: .half 0, 0       # última posição do personagem (X, Y)
                     # A, x, y
 ANIMACAO_FELIX: .half 0, 80, 189
+            
+RALPH_POS: .half 100
+INTERVALO_MOVIMENTO_RALPH: .word 0
+#                     Se esta em animacao,   x alvo da animacao, Lado que ta indo (0=direita. 1=esquerda), CONTADOR DE FRAMES
+ANIMACAO_RALPH: .half 0,                     0,                  0,                                         0
 
 
 
@@ -58,8 +63,7 @@ SETUP:
     li a2,0               # Coordenada Y inicial
     li a3,0               # Framebuffer 0
     call PRINT            # Chama a função PRINT para desenhar a tela inicial
-    
-    ### Espera o usuário pressionar uma tecla
+        ### Espera o usuário pressionar uma tecla
 KEY1:  
     li t1,0xFF200000      # Carrega o endereço de controle do KDMMIO
 LOOP:  
@@ -83,9 +87,9 @@ LOOP:
 GAME_LOOP:
 
 #Configurando fps do jogo
-li a0, 30
-li a7, 32
-ecall
+    li a0, 30
+    li a7, 32
+    ecall
 
 ########### INÍCIO DO LOOP MÚSICA ############
     
@@ -171,9 +175,58 @@ ecall
 
     ########### RENDERIZAÇÃO DO RALPH #######################
 
+    # Se primeira half de ANIMACAO_RALPH for 0, 
+    # inicia movimento, caso contrário, PULA
+    la t0, ANIMACAO_RALPH
+    lh t1, 0(t0)
+    
+    bnez t1, PULA_INICIA_MOVIMENTO_RALPH    
+    INICIA_MOVIMENTO_RALPH:
+        call INICIA_MOVIMENTACAO_RALPH
+        j DEPOIS_DA_MOVIMENTACAO_RALPH
+    PULA_INICIA_MOVIMENTO_RALPH:
+    call MOVIMENTACAO_RALPH
+    # chamada de uma funcao pra fazer o movimento
+    DEPOIS_DA_MOVIMENTACAO_RALPH:
+
+
+    la t0, ANIMACAO_RALPH
+    lh t1, 0(t0)
+    lh t4, 6(t0) # contador de frames
+    beqz t1, CARREGA_RALPH_PARADO
+    li t5, 5
+    blt t4, t5, CARREGA_RALPH_ANDANDO_1
+    li t5, 10 
+    blt t4, t5, CARREGA_RALPH_ANDANDO_2
+    sh zero, 6(t0)
+    j CARREGA_RALPH_ANDANDO_2
+    CARREGA_RALPH_PARADO:
+        la a0, ralph3           # Endereço da imagem
+        j POS_CARREGA_RALPH
+    CARREGA_RALPH_ANDANDO_1:
+        lh t1, 4(t0) # Se ta em direita
+        bnez t1, CARREGA_ESQUERDA_1
+        CARREGA_DIREITA_1:
+            la a0, ralphpDireita           # Endereço da imagem
+            j POS_CARREGA_RALPH
+        CARREGA_ESQUERDA_1:
+            la a0, ralphpEsquerda           # Endereço da imagem
+            j POS_CARREGA_RALPH
+    CARREGA_RALPH_ANDANDO_2:
+        lh t1, 4(t0) # Se ta em direita
+        bnez t1, CARREGA_ESQUERDA_2
+        CARREGA_DIREITA_2:
+            la a0, ralphpDireita2           # Endereço da imagem
+            j POS_CARREGA_RALPH
+        CARREGA_ESQUERDA_2:
+            la a0, ralphpEsquerda2           # Endereço da imagem
+            j POS_CARREGA_RALPH
+    
+    POS_CARREGA_RALPH:
     # Ralph 
-    la a0, ralph3           # Endereço da imagem
-    li a1, 80                  # Coordenada X (ajustar para centralizar)
+    la t0, RALPH_POS
+    lh a1, 0(t0)                  # Coordenada X (ajustar para centralizar)
+    addi a1, a1, -10
     li a2, 5                   # Coordenada Y (no topo da tela)
     li a3, 0                   # Framebuffer 0
     call PRINT
@@ -517,3 +570,88 @@ MOVE_FELIX_ANIMACAO:
         sh t3, 2(t2)  #atualizando a posicao do personagem
     DEPOIS_FIM_ANIMACAO_FELIX:
         ret 
+
+INICIA_MOVIMENTACAO_RALPH:
+
+    li a7, 30 # codigo da ecall de tempo
+    ecall # a0 = momento atual
+
+    la t4, INTERVALO_MOVIMENTO_RALPH
+    lw t5, 0(t4)
+    sub t0, a0, t5
+    li t6, 3000
+
+    bltu t0, t6, DEPOIS_MOVIMENTACAO
+    
+    SORTEAR:
+    li a0, 0 # menor numero gerado  
+    li a1, 4 # maior numero gerado 
+    li a7, 42 # codigo de geral numero aleatorio 
+    ecall  # a0 = numero aleatorio
+
+    li t0, 2
+    mul t1, t0, a0 # Quantos bytes a partir da primeira half
+    la t0, POINTS_X
+    add t0, t0, t1
+
+    lh t2, 0(t0) # x pra onde ele vai
+    la t3, RALPH_POS
+    lh t4, 0(t3) # x atual
+    beq t2, t4, SORTEAR
+
+    # sh t2, 0(t3) 
+
+    li a7, 30 # codigo da ecall de tempo
+    ecall # a0 , = momento atual
+    la t0, INTERVALO_MOVIMENTO_RALPH
+    sw a0, 0(t0)
+
+    bgt t4, t2, SALVA_MOVIMENTO_RALPH_ESQUERDA
+    SALVA_MOVIMENTO_RALPH_DIREITA:
+        li t6, 0
+        j DEPOIS_ESQUERDA_DIREITA
+    SALVA_MOVIMENTO_RALPH_ESQUERDA:
+        li t6, 1
+    DEPOIS_ESQUERDA_DIREITA:
+
+    la t0, ANIMACAO_RALPH
+    li t1, 1
+    sh t1, 0(t0)
+    sh t2, 2(t0)
+    sh t6, 4(t0)
+
+    DEPOIS_MOVIMENTACAO:
+
+    ret
+
+MOVIMENTACAO_RALPH:
+    # Vai somar ou subtrair enquanto nao chegou no alvo
+
+    la t0, RALPH_POS
+    lh t1, 0(t0) # posicao atual 
+    la t3, ANIMACAO_RALPH 
+    lh t2, 2(t3) # posicao alvo 
+    lh t4, 4(t3)
+    lh t5, 6(t3)
+    addi t5, t5, 1
+    sh t5, 6(t3)
+
+    bnez t4, MOVE_ESQUERDA_RALPH 
+    MOVE_DIREITA_RALPH:
+        bge t1, t2, FIM_ANIMACAO_RALPH
+        addi t1, t1, 2
+        sh t1, 0(t0)
+        ret
+    MOVE_ESQUERDA_RALPH:
+        ble t1, t2, FIM_ANIMACAO_RALPH
+        addi t1, t1,-2
+        sh t1, 0(t0)
+        ret
+
+    FIM_ANIMACAO_RALPH: 
+
+    sh zero, 0(t3)
+    sh t2, 0(t0)
+
+    
+    ret
