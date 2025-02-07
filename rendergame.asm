@@ -16,6 +16,9 @@
 .include "imagens/FelixRebaixado.data"
 .include "imagens/AndarSemMarteloPDireitaFelix.data"
 .include "imagens/AndarSemMarteloPEsquerdaFelix.data"
+.include "imagens/janelinhaPerfeita.data"
+.include "imagens/janelaQuasePerfeita.data"
+.include "imagens/janelaTotalmenteQuebrada.data"
 
 #teste
 notas: .word 9, 0, 0,
@@ -39,7 +42,25 @@ INTERVALO_MOVIMENTO_RALPH: .word 0
 #                     Se esta em animacao,   x alvo da animacao, Lado que ta indo (0=direita. 1=esquerda), CONTADOR DE FRAMES
 ANIMACAO_RALPH: .half 0,                     0,                  0,                                         0
 
+windows: 
+    #     x    y    janela, status
+    .half 83 , 191, 1, 0   # janela 1
+    .half 115, 191, 1, 0   # janela 2
+    #.half 155, 202, 0, 2   # porta
+    .half 182, 191, 1, 0  # janela 4
+    .half 213, 191, 1, 0   # janela 5
 
+    .half 83, 134 , 1, 0   # janela 6
+    .half 115, 134, 1, 0   # janela 7
+    #.half 155, 138, 0, 2   # sacada
+    .half 182, 134, 1, 0   # janela 9
+    .half 213, 134, 1, 0   # janela 10
+
+    .half 83, 78, 1 , 0   # janela 11
+    .half 115, 78, 1, 0    # janela 12
+    .half 148, 78, 1, 0    # janela 13
+    .half 182, 78, 1, 0    # janela 14
+    .half 213, 78, 1, 0    # janela 15
 
 # Posições X das quatro posições em cada linha
 FELIX_FRAME: .byte 0
@@ -82,7 +103,7 @@ LOOP:
     li a3,1               # Framebuffer 1
     call PRINT            # Chama a função PRINT para desenhar o fundo novamente
     
-################### INICIO DO LOOP PRINCIPAL ##################
+################### INICIO DO LOOP PRINCIPAL ################## 
 
 GAME_LOOP:
 
@@ -137,12 +158,15 @@ GAME_LOOP:
 ############# FIM DO LOOP MÚSICA #############
 
 ########### RENDERIZAÇÃO DO FUNDO E DO FELIX ############
-
+    jal s8, IMPRIMINDO_JANELAS 
     call SELECT_FELIX
 
     call KEY2             # Chama a função KEY2 para verificar a tecla pressionada
     xori s0,s0,1          # Alterna o frame buffer (0 ou 1)
-
+    # Atualizar LED (opcional), pro personagem não piscar na tela
+    li t0,0xFF200604       # Carrega o endereço do LED
+    sw s0,0(t0)            # Atualiza o LED com o valor de s0
+   
     la t0,ANIMACAO_FELIX
     lh t1, 0(t0)
     bnez t1, CALL_MOVE_FELIX_ANIMACAO
@@ -156,13 +180,12 @@ GAME_LOOP:
     # Alternar frame apenas para o personagem
     lh a1,0(t0)           # Carrega a posição X atual
     lh a2,2(t0)           # Carrega a posição Y atual
-    mv a3,s0              # Alterna o frame para o personagem
+    li a3,0              # Alterna o frame para o personagem
     call PRINT            # Chama a função PRINT para desenhar o personagem
+    li a3,1              # Alterna o frame para o personagem
+    call PRINT
 
-    # Atualizar LED (opcional), pro personagem não piscar na tela
-    li t0,0xFF200604       # Carrega o endereço do LED
-    sw s0,0(t0)            # Atualiza o LED com o valor de s0
-    
+ 
     la t0,OLD_CHAR_POS     # Carrega o endereço da última posição do personagem
 
     la a0,fundo            # Carrega o endereço da imagem do tile em a0
@@ -174,7 +197,6 @@ GAME_LOOP:
     call PRINT             # Chama a função PRINT para desenhar o tile
 
     ########### RENDERIZAÇÃO DO RALPH #######################
-
     # Se primeira half de ANIMACAO_RALPH for 0, 
     # inicia movimento, caso contrário, PULA
     la t0, ANIMACAO_RALPH
@@ -655,3 +677,40 @@ MOVIMENTACAO_RALPH:
 
     
     ret
+
+IMPRIMINDO_JANELAS:
+    la s11,windows
+    li s10,0
+    li s9,13
+    LOOP_IMPRIMIR_JANELAS:
+        lh t0, 6(s11) # status da janela
+        li t1,0
+        li t2,1
+        li t3,2
+        beq t0, t3, CARREGA_WINDOW_PERFECT
+        beq t0, t2, CARREGA_WINDOW_QUASE_PERFEITA
+        #beq t0, t1, CARREGA_WINDOW_QUEBRADA
+        CARREGA_WINDOW_QUEBRADA:
+            la a0,janelaTotalmenteQuebrada
+            j POS_CARREGA_JANELA
+        CARREGA_WINDOW_QUASE_PERFEITA:
+            la a0,janelaQuasePerfeita
+            j POS_CARREGA_JANELA
+        CARREGA_WINDOW_PERFECT:
+            la a0,janelinhaPerfeita
+        POS_CARREGA_JANELA:
+
+        lh a1,0(s11)             # Coordenada X inicial
+        lh a2,2(s11)            # Coordenada Y inicial
+        li a3,0               # Framebuffer 0
+        call PRINT            # Chama a função PRINT para desenhar o fundo
+        li a3,1               # Framebuffer 1
+        call PRINT      # Chama a função PRINT para desenhar a janelinha novamente
+        addi s10,s10,1      # Incrementa o contador de janelas
+        addi s11,s11,8    # Próxima janelinha
+        blt s10,s9,LOOP_IMPRIMIR_JANELAS # Continua até imprimir todas as janelinhas
+    #li a7, 10
+    #ecall
+    jalr t0, s8, 0
+    #ret
+
