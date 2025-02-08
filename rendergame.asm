@@ -9,8 +9,6 @@
 .include "imagens/ralphpDireita2.data"   # Inclui o ralph 
 .include "imagens/ralphpEsquerda.data"   # Inclui o ralph 
 .include "imagens/ralphpEsquerda2.data"  # Inclui o ralph 
-.include "imagens/AndarPDireitaFelix.data"
-.include "imagens/AndarPEsquerdaFelix.data"
 .include "imagens/FelixOutroLado.data"
 .include "imagens/FelixOutroLadoRebaixado.data"
 .include "imagens/FelixRebaixado.data"
@@ -19,8 +17,12 @@
 .include "imagens/janelinhaPerfeita.data"
 .include "imagens/janelaQuasePerfeita.data"
 .include "imagens/janelaTotalmenteQuebrada.data"
+.include "imagens/MartelandoPDireitaFelix.data"
+.include "imagens/MartelandoPEsquerdaFelix.data"
+.include "imagens/Martelando1PEsquerdaFelix.data"
+.include "imagens/Martelando1PDireitaFelix.data"
 
-#teste
+
 notas: .word 9, 0, 0,
 67, 1000, 0,
 74, 1000, 0,
@@ -32,8 +34,7 @@ notas: .word 9, 0, 0,
 67, 500, 0,
 66, 500, 0,
 
-CHAR_POS: .half 80, 189       # posição inicial do personagem (X, Y)
-OLD_CHAR_POS: .half 0, 0       # última posição do personagem (X, Y)
+CHAR_POS: .half 83, 191       # posição inicial do personagem (X, Y)
                     # A, x, y
 ANIMACAO_FELIX: .half 0, 80, 189
             
@@ -62,12 +63,14 @@ windows:
     .half 182, 78, 1, 0    # janela 14
     .half 213, 78, 1, 0    # janela 15
 
+FELIX_NO_JOB: .byte 0,                          0   
 # Posições X das quatro posições em cada linha
 FELIX_FRAME: .byte 0
-POINTS_X: .half 80, 110, 145, 180, 210  # Posições X das quatro posições em cada linha
-POINTS_Y: .half 75, 132, 189       # Posições Y das três linhas 
-                # Direita/esquerda, cima/baixo
+POINTS_X: .half 83, 115, 148, 182, 213  # Posições X das quatro posições em cada linha
+POINTS_Y: .half 78, 134, 191       # Posições Y das três linhas 
+                # Direita0/esquerda1, cima/baixo
 FELIX_DIR: .byte 1,                 3 
+                    #martelando ou não/ contador de frames
 
 
 
@@ -95,13 +98,13 @@ LOOP:
     sw t2,12(t1)          # Escreve a tecla pressionada no display
 
     # Desenha o fundo uma vez no início
-    la a0,fundo           # Carrega o endereço da imagem do fundo em a0
-    li a1,0               # Coordenada X inicial
-    li a2,0               # Coordenada Y inicial
-    li a3,0               # Framebuffer 0
-    call PRINT            # Chama a função PRINT para desenhar o fundo
-    li a3,1               # Framebuffer 1
-    call PRINT            # Chama a função PRINT para desenhar o fundo novamente
+    #la a0,fundo           # Carrega o endereço da imagem do fundo em a0
+    #li a1,0               # Coordenada X inicial
+    #li a2,0               # Coordenada Y inicial
+    #li a3,0               # Framebuffer 0
+    #call PRINT            # Chama a função PRINT para desenhar o fundo
+    #li a3,1               # Framebuffer 1
+    #call PRINT            # Chama a função PRINT para desenhar o fundo novamente
     
 ################### INICIO DO LOOP PRINCIPAL ################## 
 
@@ -158,15 +161,30 @@ GAME_LOOP:
 ############# FIM DO LOOP MÚSICA #############
 
 ########### RENDERIZAÇÃO DO FUNDO E DO FELIX ############
-    jal s8, IMPRIMINDO_JANELAS 
-    call SELECT_FELIX
 
     call KEY2             # Chama a função KEY2 para verificar a tecla pressionada
-    xori s0,s0,1          # Alterna o frame buffer (0 ou 1)
     # Atualizar LED (opcional), pro personagem não piscar na tela
     li t0,0xFF200604       # Carrega o endereço do LED
     sw s0,0(t0)            # Atualiza o LED com o valor de s0
-   
+    xori s0,s0,1          # Alterna o frame buffer (0 ou 1)
+    
+
+    la a0,fundo            # Carrega o endereço da imagem do tile em a0
+    li a1,0	               # Carrega a última posição X
+    li a2,0		           # Carrega a última posição Y
+    mv a3, s0               # Alterna o frame para o tile
+    call PRINT             # Chama a função PRINT para desenhar o tile
+
+    jal s8, IMPRIMINDO_JANELAS
+    
+    la t0,FELIX_NO_JOB
+    lb t1,0(t0) # t1= se ta em animacao ou nao
+    beqz t1, NAO_CHAMA_ANIMACAO_MARTELANDO 
+    jal s8, ANIMACAO_MARTELANDO
+    j  DEPOIS_NEW_PRINT_FELIX
+    NAO_CHAMA_ANIMACAO_MARTELANDO:
+		
+    call SELECT_FELIX
     la t0,ANIMACAO_FELIX
     lh t1, 0(t0)
     bnez t1, CALL_MOVE_FELIX_ANIMACAO
@@ -175,28 +193,17 @@ GAME_LOOP:
         call MOVE_FELIX_ANIMACAO
     DEPOIS_CALL_MOVE_FELIX_ANIMACAO:
 
+
     la t0,CHAR_POS        # Carrega o endereço da posição atual do personagem
-    
     # Alternar frame apenas para o personagem
     lh a1,0(t0)           # Carrega a posição X atual
     lh a2,2(t0)           # Carrega a posição Y atual
-    li a3,0              # Alterna o frame para o personagem
+    mv a3,s0              # Alterna o frame para o personagem
     call PRINT            # Chama a função PRINT para desenhar o personagem
-    li a3,1              # Alterna o frame para o personagem
-    call PRINT
-
  
-    la t0,OLD_CHAR_POS     # Carrega o endereço da última posição do personagem
+    DEPOIS_NEW_PRINT_FELIX:
 
-    la a0,fundo            # Carrega o endereço da imagem do tile em a0
-    li a1,0	               # Carrega a última posição X
-    li a2,0		           # Carrega a última posição Y
-    
-    mv a3,s0               # Alterna o frame para o tile
-    xori a3,a3,1           # Alterna o frame buffer
-    call PRINT             # Chama a função PRINT para desenhar o tile
-
-    ########### RENDERIZAÇÃO DO RALPH #######################
+    ########### RENDERIZAÇÃO DO RALPH #############
     # Se primeira half de ANIMACAO_RALPH for 0, 
     # inicia movimento, caso contrário, PULA
     la t0, ANIMACAO_RALPH
@@ -210,7 +217,6 @@ GAME_LOOP:
     call MOVIMENTACAO_RALPH
     # chamada de uma funcao pra fazer o movimento
     DEPOIS_DA_MOVIMENTACAO_RALPH:
-
 
     la t0, ANIMACAO_RALPH
     lh t1, 0(t0)
@@ -250,9 +256,7 @@ GAME_LOOP:
     lh a1, 0(t0)                  # Coordenada X (ajustar para centralizar)
     addi a1, a1, -10
     li a2, 5                   # Coordenada Y (no topo da tela)
-    li a3, 0                   # Framebuffer 0
-    call PRINT
-    li a3, 1                   # Framebuffer 1
+    mv a3, s0                   # Framebuffer 0
     call PRINT
 
     j GAME_LOOP            # Volta para o início do loop do jogo
@@ -260,10 +264,12 @@ GAME_LOOP:
 ################### FIM DO LOOP PRINCIPAL #####################
 
 KEY2:   
+    la t0,FELIX_NO_JOB
+    lb t1,0(t0)
+    bnez t1, FIM
     la t0,ANIMACAO_FELIX
     lh t1, 0(t0)
-    bne t1, zero , FIM
-
+    bne t1,zero,FIM
 
     li t1,0xFF200000      # Carrega o endereço de controle do KDMMIO
     lw t0,0(t1)           # Lê bit de controle do teclado
@@ -271,6 +277,8 @@ KEY2:
     beq t0,zero,FIM       # Se não há tecla pressionada, pula para FIM
     lw t2,4(t1)           # Lê o valor da tecla pressionada
 
+    li t0,'m'             # Carrega o valor ASCII da tecla 'a'
+    beq t2,t0,INICIANDO_JOB # Se 'a' é pressionado, pula para INICIANDO_JOB
     li t0,'a'             # Carrega o valor ASCII da tecla 'a'
     beq t2,t0,MOVE_LEFT   # Se 'a' é pressionado, pula para MOVE_LEFT
     li t0,'d'             # Carrega o valor ASCII da tecla 'd'
@@ -278,6 +286,17 @@ KEY2:
     li t0,'w'             # Carrega o valor ASCII da tecla 'w'
     beq t2,t0,MOVE_UP     # Se 'w' é pressionado, pula para MOVE_UP
     li t0,'s'             # Carrega o valor ASCII da tecla 's'
+    beq t2,t0,MOVE_DOWN   # Se 's' é pressionado, pula para MOVE_DOWN
+
+    li t0,'A'             # Carrega o valor ASCII da tecla 'a'
+    beq t2,t0,MOVE_LEFT   # Se 'a' é pressionado, pula para MOVE_LEFT
+    li t0,'D'             # Carrega o valor ASCII da tecla 'd'
+    beq t2,t0,MOVE_RIGHT  # Se 'd' é pressionado, pula para MOVE_RIGHT
+    li t0,'M'             # Carrega o valor ASCII da tecla 'a'
+    beq t2,t0,INICIANDO_JOB # Se 'a' é pressionado, pula para INICIANDO_JOB
+    li t0,'W'             # Carrega o valor ASCII da tecla 'w'
+    beq t2,t0,MOVE_UP     # Se 'w' é pressionado, pula para MOVE_UP
+    li t0,'S'             # Carrega o valor ASCII da tecla 's'
     beq t2,t0,MOVE_DOWN   # Se 's' é pressionado, pula para MOVE_DOWN
 
 FIM:    
@@ -431,13 +450,11 @@ SET_Y3:
     ret                   # Retorna da função
 
 SELECT_FELIX:
-    
     la t0, FELIX_DIR
     lb t0, 0(t0)
     beq t0, zero, FELIX_RIGHT
     li t1, 1
     beq t0, t1, FELIX_LEFT
-
     FELIX_RIGHT:
         la t0, ANIMACAO_FELIX
         lh t3, 0(t0)
@@ -495,6 +512,76 @@ SELECT_FELIX:
                 la a0, FelixOutroLado
                 ret
             
+ANIMACAO_MARTELANDO:
+    la t0,FELIX_NO_JOB
+    lb t1,1(t0)
+    addi t1,t1,1
+    sb t1,1(t0)
+
+    la t6,CHAR_POS        # Carrega o endereço da posição atual do personagem
+    # Alternar frame apenas para o personagem
+    lh a1,0(t6)           # Carrega a posição X atual
+    lh a2,2(t6)           # Carrega a posição Y atual
+    mv a3,s0              # Alterna o frame para o personagem 
+
+    li t2, 5
+    blt t1,t2,CARREGA_MARTELANDO_1
+    li t2,10
+    blt t1,t2,CARREGA_MARTELANDO_2
+    sb zero,0(t0)
+    sb zero,1(t0)
+
+	la t0,windows
+	li t1,-1 #contador 
+	li t2,13
+	la t3,CHAR_POS
+	lh t4,0(t3) #lendo o x atual
+	lh t5,2(t3) #lendo o y atual
+	addi t0,t0,-8
+	PROCURANDO_JANELINHA:
+		addi t0,t0,8
+		addi t1,t1,1
+		beq t1,t2,FIM_PROCURANDO_JANELINHA
+		lh t6,0(t0)
+		bne t6,t4,PROCURANDO_JANELINHA
+		lh t6,2(t0)
+		bne t6,t5,PROCURANDO_JANELINHA
+
+		lh t1,6(t0) #lendo o status da janelinha que eu achei
+		li t2,2
+		beq t1,t2,FIM_PROCURANDO_JANELINHA
+		addi t1,t1,1
+		sh t1,6(t0)  #salvando novo status da janelinha 
+
+	FIM_PROCURANDO_JANELINHA:
+		jalr t0, s8, 0
+
+    CARREGA_MARTELANDO_2:
+        la t0,FELIX_DIR
+        lb t1,0(t0)
+        li t2,1
+        beq t1,t2,CARREGA_MARTELANDO_ESQUERDA
+        la a0, MartelandoPDireitaFelix
+        j DEPOIS_CARREGA_MARTELANDO
+        CARREGA_MARTELANDO_ESQUERDA:
+            addi a1, a1,-10 
+            la a0,MartelandoPEsquerdaFelix
+            j DEPOIS_CARREGA_MARTELANDO
+    CARREGA_MARTELANDO_1:
+        la t0,FELIX_DIR
+        lb t1,0(t0)
+        li t2,1
+        beq t1,t2,CARREGA_MARTELANDO_ESQUERDA_1
+        la a0, Martelando1PDireitaFelix
+        j DEPOIS_CARREGA_MARTELANDO
+        CARREGA_MARTELANDO_ESQUERDA_1:
+            addi a1, a1,-10 
+            la a0,Martelando1PEsquerdaFelix
+            j DEPOIS_CARREGA_MARTELANDO
+
+    DEPOIS_CARREGA_MARTELANDO:
+    call PRINT            # Chama a função PRINT para desenhar o personagem
+    jalr t0, s8, 0
 #################### FUNÇÃO DE PRINT ####################
 
 PRINT:
@@ -607,7 +694,7 @@ INICIA_MOVIMENTACAO_RALPH:
     
     SORTEAR:
     li a0, 0 # menor numero gerado  
-    li a1, 4 # maior numero gerado 
+    li a1, 5 # maior numero gerado 
     li a7, 42 # codigo de geral numero aleatorio 
     ecall  # a0 = numero aleatorio
 
@@ -702,15 +789,16 @@ IMPRIMINDO_JANELAS:
 
         lh a1,0(s11)             # Coordenada X inicial
         lh a2,2(s11)            # Coordenada Y inicial
-        li a3,0               # Framebuffer 0
+        mv a3, s0               # Framebuffer 0
         call PRINT            # Chama a função PRINT para desenhar o fundo
-        li a3,1               # Framebuffer 1
-        call PRINT      # Chama a função PRINT para desenhar a janelinha novamente
         addi s10,s10,1      # Incrementa o contador de janelas
         addi s11,s11,8    # Próxima janelinha
         blt s10,s9,LOOP_IMPRIMIR_JANELAS # Continua até imprimir todas as janelinhas
-    #li a7, 10
-    #ecall
+    
     jalr t0, s8, 0
-    #ret
 
+INICIANDO_JOB:
+    la t0, FELIX_NO_JOB
+    li t1, 1
+    sb t1, 0(t0)
+    ret
