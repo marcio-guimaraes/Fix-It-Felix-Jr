@@ -21,6 +21,9 @@
 .include "imagens/MartelandoPEsquerdaFelix.data"
 .include "imagens/Martelando1PEsquerdaFelix.data"
 .include "imagens/Martelando1PDireitaFelix.data"
+.include "imagens/tijolo.data"            #inclui tijolinho
+.include "imagens/ralphAtaque1.data"
+.include "imagens/ralphAtaque2.data"
 
 
 notas: .word 9, 0, 0,
@@ -33,6 +36,14 @@ notas: .word 9, 0, 0,
 69, 500, 0,
 67, 500, 0,
 66, 500, 0,
+
+TIJOLOS: .half 5,
+#S, X, Y
+ 0, 0, 0
+ 0, 0, 0
+ 0, 0, 0
+ 0, 0, 0
+ 0, 0, 0
 
 CHAR_POS: .half 83, 191       # posição inicial do personagem (X, Y)
                     # A, x, y
@@ -172,7 +183,7 @@ GAME_LOOP:
     la a0,fundo            # Carrega o endereço da imagem do tile em a0
     li a1,0	               # Carrega a última posição X
     li a2,0		           # Carrega a última posição Y
-    mv a3, s0               # Alterna o frame para o tile
+    mv a3, s0               # Alterna o fre para o tile
     call PRINT             # Chama a função PRINT para desenhar o tile
 
     jal s8, IMPRIMINDO_JANELAS
@@ -214,12 +225,24 @@ GAME_LOOP:
         call INICIA_MOVIMENTACAO_RALPH
         j DEPOIS_DA_MOVIMENTACAO_RALPH
     PULA_INICIA_MOVIMENTO_RALPH:
-    call MOVIMENTACAO_RALPH
+        li t3, 1
+        beq t1, t3, CHAMA_ANIMACAO_RALPH
+        li t3, 2
+        beq t1, t3, CHAMA_ANIMACAO_ATAQUE_RALPH
+        
+        CHAMA_ANIMACAO_RALPH:
+            call MOVIMENTACAO_RALPH
+            j DEPOIS_DA_MOVIMENTACAO_RALPH
+        CHAMA_ANIMACAO_ATAQUE_RALPH:
+            jal s8, ATAQUE_RALPH
+            j DEPOIS_DA_MOVIMENTACAO_RALPH
     # chamada de uma funcao pra fazer o movimento
     DEPOIS_DA_MOVIMENTACAO_RALPH:
 
     la t0, ANIMACAO_RALPH
-    lh t1, 0(t0)
+    lh t1, 0(t0) # Qual animacao
+    li t4, 2
+    beq t1, t4, DEPOIS_IMPRIMIR_RALPH
     lh t4, 6(t0) # contador de frames
     beqz t1, CARREGA_RALPH_PARADO
     li t5, 5
@@ -259,6 +282,9 @@ GAME_LOOP:
     mv a3, s0                   # Framebuffer 0
     call PRINT
 
+    DEPOIS_IMPRIMIR_RALPH:
+
+    call IMPRIMIR_TIJOLOS 
     j GAME_LOOP            # Volta para o início do loop do jogo
 
 ################### FIM DO LOOP PRINCIPAL #####################
@@ -301,6 +327,95 @@ KEY2:
 
 FIM:    
     ret                   # Retorna da função
+
+
+IMPRIMIR_TIJOLOS:
+    la s1, TIJOLOS
+    lh s2, 0(s1)
+    li s3, 0
+    addi s1, s1, 2
+    LOOP_IMPRIMINDO_TIJOLO:
+        beq s3, s2, FINAL_LOOP_IMPRIME_TIJOLO
+        lh t3, 0(s1)
+        beqz t3, DEPOIS_DE_IMPRIMIR_TIJOLO
+        la a0, tijolo
+        li a1, 0
+        li a2, 0
+        mv a3, s0
+        call PRINT 
+        # LER E IMPRIMIR A JANELA
+        DEPOIS_DE_IMPRIMIR_TIJOLO:
+        addi s1, s1, 6
+        addi s3, s3, 1
+        j LOOP_IMPRIMINDO_TIJOLO
+    FINAL_LOOP_IMPRIME_TIJOLO:
+    ret 
+
+ATAQUE_RALPH:
+    la t1, ANIMACAO_RALPH
+    lh t2, 6(t1)
+    addi t2, t2, 1 
+    sh t2, 6(t1)
+
+    li t3, 5
+    blt t2, t3, CARREGAR_ATQ1
+    li t3, 10
+    blt t2, t3, CARREGAR_ATQ2
+    beq t3, t2, CRIAR_TIJOLO
+    la t1, ANIMACAO_RALPH
+    lh t2, 6(t1)
+    addi t2, t2, 1 
+    sh t2, 6(t1)
+    li t3, 15
+    blt t2, t3, CARREGAR_ATQ1
+    li t3, 20
+    blt t2, t3, CARREGAR_ATQ2
+    li t3, 25
+    blt t2, t3, CARREGAR_ATQ1
+    li t3, 30
+    blt t2, t3, CARREGAR_ATQ2
+
+    sh zero, 0(t1)
+
+    CARREGAR_ATQ1:
+        la a0, RalphAtaque1
+        j POS_CARREGA_ATAQUE
+    CARREGAR_ATQ2:
+        la a0, RalphAtaque2
+        j POS_CARREGA_ATAQUE
+    POS_CARREGA_ATAQUE:
+
+    la t4, RALPH_POS
+    lh a1, 0(t4)# x
+    addi a1, a1, -18
+    li a2, 5
+    call PRINT
+
+    jalr t0, s8, 0
+
+CRIAR_TIJOLO:
+    # a0 = q vai ser o tijolo
+    la t0, TIJOLOS
+    lh t1, 0(t0)
+    li t2, 0
+    addi t0, t0, 2
+    LOOP_PROCURA_LUGAR_PRA_TIJOLO:
+        beq t2, t1, FINAL_LOOP_PROCURA_TIJOLO
+        lh t3, 0(t0)
+        bnez t3, NAO_CRIA_TIJOLO
+        li t4, 1
+        sh t4, 0(t0)
+        li t4, 10
+        sh a0, 2(t0)
+        sh t4, 4(t0)
+        j FINAL_LOOP_PROCURA_TIJOLO
+        NAO_CRIA_TIJOLO:
+        addi t0, t0, 6
+        addi t2, t2, 1
+        j LOOP_PROCURA_LUGAR_PRA_TIJOLO 
+    FINAL_LOOP_PROCURA_TIJOLO:
+
+    ret
 
 ########## LÓGICA DE MOVIMENTAÇÃO DO PERSONAGEM ########## 
 
@@ -730,7 +845,6 @@ INICIA_MOVIMENTACAO_RALPH:
     sh t6, 4(t0)
 
     DEPOIS_MOVIMENTACAO:
-
     ret
 
 MOVIMENTACAO_RALPH:
@@ -758,8 +872,10 @@ MOVIMENTACAO_RALPH:
         ret
 
     FIM_ANIMACAO_RALPH: 
-
-    sh zero, 0(t3)
+    
+    li t6, 2
+    sh t6, 0(t3) 
+    sh zero, 6(t3)
     sh t2, 0(t0)
 
     
