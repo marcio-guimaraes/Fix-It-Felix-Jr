@@ -929,6 +929,14 @@ IMPRIMINDO_JANELAS:
     jalr t0, s8, 0
 
 INICIANDO_JOB:
+
+    li a0, 75                # Lê o valor da nota
+    li a1, 234               # Lê a duração da nota
+    li a2, 81                # Define o instrumento
+    li a3, 127               # Define o volume
+    li a7, 31                # Define a syscall para tocar a nota
+    ecall                    # Toca a nota
+
     la t0, FELIX_NO_JOB
     li t1, 1
     sb t1, 0(t0)
