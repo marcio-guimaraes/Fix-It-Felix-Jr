@@ -37,14 +37,6 @@ notas: .word 9, 0, 0,
 67, 500, 0,
 66, 500, 0,
 
-TIJOLOS: .half 5,
-#S, X, Y
- 0, 0, 0
- 0, 0, 0
- 0, 0, 0
- 0, 0, 0
- 0, 0, 0
-
 CHAR_POS: .half 83, 191       # posição inicial do personagem (X, Y)
                     # A, x, y
 ANIMACAO_FELIX: .half 0, 80, 189
@@ -88,6 +80,14 @@ FELIX_DIR: .byte 1,                 3
 ####################### FIM DOS DADOS #########################
 
 ######### PRINTA TELA INICIAL E ESPERA TECLAR ALGO ############
+
+TIJOLOS: .half 5,
+#S, X, Y
+ 0, 0, 0
+ 0, 0, 0
+ 0, 0, 0
+ 0, 0, 0
+ 0, 0, 0
 
 
 .text
@@ -187,6 +187,7 @@ GAME_LOOP:
     call PRINT             # Chama a função PRINT para desenhar o tile
 
     jal s8, IMPRIMINDO_JANELAS
+    jal s8, IMPRIMIR_TIJOLOS 
     
     la t0,FELIX_NO_JOB
     lb t1,0(t0) # t1= se ta em animacao ou nao
@@ -284,7 +285,6 @@ GAME_LOOP:
 
     DEPOIS_IMPRIMIR_RALPH:
 
-    call IMPRIMIR_TIJOLOS 
     j GAME_LOOP            # Volta para o início do loop do jogo
 
 ################### FIM DO LOOP PRINCIPAL #####################
@@ -335,21 +335,35 @@ IMPRIMIR_TIJOLOS:
     li s3, 0
     addi s1, s1, 2
     LOOP_IMPRIMINDO_TIJOLO:
+        # LER E IMPRIMIR o TIJOLO
         beq s3, s2, FINAL_LOOP_IMPRIME_TIJOLO
         lh t3, 0(s1)
         beqz t3, DEPOIS_DE_IMPRIMIR_TIJOLO
         la a0, tijolo
-        li a1, 0
-        li a2, 0
+        lh a1, 2(s1)
+        addi a1, a1, 5
+        lh a2, 4(s1)
+        addi a2, a2, 2
+        sh a2, 4(s1)
+
+        li t3, 260
+        bgt a2, t3, EXCLUIR_TIJOLO
+
         mv a3, s0
-        call PRINT 
-        # LER E IMPRIMIR A JANELA
+        call PRINT
+         
         DEPOIS_DE_IMPRIMIR_TIJOLO:
         addi s1, s1, 6
         addi s3, s3, 1
         j LOOP_IMPRIMINDO_TIJOLO
     FINAL_LOOP_IMPRIME_TIJOLO:
-    ret 
+    jalr t0, s8, 0
+
+EXCLUIR_TIJOLO:
+    sh zero, 0(s1)
+    sh zero, 2(s1)
+    sh zero, 4(s1)
+    ret
 
 ATAQUE_RALPH:
     la t1, ANIMACAO_RALPH
@@ -394,7 +408,6 @@ ATAQUE_RALPH:
     jalr t0, s8, 0
 
 CRIAR_TIJOLO:
-    # a0 = q vai ser o tijolo
     la t0, TIJOLOS
     lh t1, 0(t0)
     li t2, 0
@@ -403,10 +416,12 @@ CRIAR_TIJOLO:
         beq t2, t1, FINAL_LOOP_PROCURA_TIJOLO
         lh t3, 0(t0)
         bnez t3, NAO_CRIA_TIJOLO
-        li t4, 1
+        li t4, 2
         sh t4, 0(t0)
         li t4, 10
-        sh a0, 2(t0)
+        la t5, RALPH_POS
+        lh t6, 0(t5)
+        sh t6, 2(t0)
         sh t4, 4(t0)
         j FINAL_LOOP_PROCURA_TIJOLO
         NAO_CRIA_TIJOLO:
