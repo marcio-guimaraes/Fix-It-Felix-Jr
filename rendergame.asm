@@ -25,6 +25,9 @@
 .include "imagens/ralphAtaque1.data"
 .include "imagens/ralphAtaque2.data"
 
+pontos: .word 0
+vidas: .word 0
+
 
 notas: .word 60, 0, 0,
 55,234,0,
@@ -118,7 +121,7 @@ windows:
     .half 182, 78, 1, 0    # janela 14
     .half 213, 78, 1, 0    # janela 15
 
-FELIX_NO_JOB: .byte 0,                          0   
+FELIX_NO_JOB: .byte 0,              0   
 # Posições X das quatro posições em cada linha
 FELIX_FRAME: .byte 0
 POINTS_X: .half 83, 115, 148, 182, 213  # Posições X das quatro posições em cada linha
@@ -172,6 +175,15 @@ LOOP:
 ################### INICIO DO LOOP PRINCIPAL ################## 
 
 GAME_LOOP:
+
+        la t0,pontos #lendo a quantidade de pontos
+        lw t1, 0(t0) 
+        li t2,26
+        bne t1,t2,FASE_1
+        li a7, 10
+        ecall
+        FASE_1:
+        
 
 #Configurando fps do jogo
     li a0, 30
@@ -355,8 +367,8 @@ KEY2:
     beq t0,zero,FIM       # Se não há tecla pressionada, pula para FIM
     lw t2,4(t1)           # Lê o valor da tecla pressionada
 
-    li t0,'m'             # Carrega o valor ASCII da tecla 'a'
-    beq t2,t0,INICIANDO_JOB # Se 'a' é pressionado, pula para INICIANDO_JOB
+    li t0,'m'             # Carrega o valor ASCII da tecla 'm'
+    beq t2,t0,INICIANDO_JOB # Se 'm' é pressionado, pula para INICIANDO_JOB
     li t0,'a'             # Carrega o valor ASCII da tecla 'a'
     beq t2,t0,MOVE_LEFT   # Se 'a' é pressionado, pula para MOVE_LEFT
     li t0,'d'             # Carrega o valor ASCII da tecla 'd'
@@ -370,8 +382,8 @@ KEY2:
     beq t2,t0,MOVE_LEFT   # Se 'a' é pressionado, pula para MOVE_LEFT
     li t0,'D'             # Carrega o valor ASCII da tecla 'd'
     beq t2,t0,MOVE_RIGHT  # Se 'd' é pressionado, pula para MOVE_RIGHT
-    li t0,'M'             # Carrega o valor ASCII da tecla 'a'
-    beq t2,t0,INICIANDO_JOB # Se 'a' é pressionado, pula para INICIANDO_JOB
+    li t0,'M'             # Carrega o valor ASCII da tecla 'm'
+    beq t2,t0,INICIANDO_JOB # Se 'm' é pressionado, pula para INICIANDO_JOB
     li t0,'W'             # Carrega o valor ASCII da tecla 'w'
     beq t2,t0,MOVE_UP     # Se 'w' é pressionado, pula para MOVE_UP
     li t0,'S'             # Carrega o valor ASCII da tecla 's'
@@ -733,7 +745,12 @@ ANIMACAO_MARTELANDO:
 		li t2,2
 		beq t1,t2,FIM_PROCURANDO_JANELINHA
 		addi t1,t1,1
-		sh t1,6(t0)  #salvando novo status da janelinha 
+		sh t1,6(t0)  #salvando novo status da janelinha
+
+        la t0,pontos #lendo a quantidade de pontos
+        lw a0, 0(t0) 
+        addi a0,a0,1
+        sh a0,0(t0) #alterando para a nova quantidade de pontos
 
 	FIM_PROCURANDO_JANELINHA:
 		jalr t0, s8, 0
