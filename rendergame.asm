@@ -24,9 +24,10 @@
 .include "imagens/tijolo.data"            #inclui tijolinho
 .include "imagens/ralphAtaque1.data"
 .include "imagens/ralphAtaque2.data"
+.include "imagens/healthIcon.data"
 
 pontos: .word 0
-vidas: .word 0
+vidas: .word 3
 
 
 notas: .word 60, 0, 0,
@@ -180,10 +181,8 @@ GAME_LOOP:
         lw t1, 0(t0) 
         li t2,26
         bne t1,t2,FASE_1
-        li a7, 10
-        ecall
-        FASE_1:
-        
+        call GAME_OVER
+        FASE_1:        
 
 #Configurando fps do jogo
     li a0, 30
@@ -249,6 +248,38 @@ GAME_LOOP:
     li a2,0		           # Carrega a última posição Y
     mv a3, s0               # Alterna o fre para o tile
     call PRINT             # Chama a função PRINT para desenhar o tile
+
+
+##########   Iniciando sistema de vidas     ############################
+
+        la t0,vidas #lendo a quantidade de vidas
+        lw t1, 0(t0)  #passando a quantidade de vidas pra t1
+        li t2,3
+
+        la a0,healthIcon       # Carrega o endereço da imagem do tile em a0
+        li a1,295	               # Carrega a última posição X
+        li a2,10		           # Carrega a última posição Y
+
+    #Se tive 3 vidas
+        blt t1,t2,VIDAS_2
+        mv a3, s0              # Alterna o fre para o tile
+        call PRINT             # Chama a função PRINT para desenhar o tile
+VIDAS_2:
+    li a1,275	               # Carrega a última posição X
+    li a2,10		           # Carrega a última posição Y
+    li t2,2
+    blt t1,t2,VIDAS_1
+    mv a3, s0              # Alterna o fre para o tile
+    call PRINT             # Chama a função PRINT para desenhar o tile
+VIDAS_1:
+    li a1,255	           # Carrega a última posição X
+    li a2,10	           # Carrega a última posição Y
+    li t2,1
+    blt t1,t2,GAME_OVER
+    mv a3, s0              # Alterna o fre para o tile
+    call PRINT             # Chama a função PRINT para desenhar o tile
+
+        
 
     jal s8, IMPRIMINDO_JANELAS
     jal s8, IMPRIMIR_TIJOLOS 
@@ -1010,3 +1041,7 @@ INICIANDO_JOB:
     li t1, 1
     sb t1, 0(t0)
     ret
+
+GAME_OVER:
+li a7,10
+ecall
