@@ -25,9 +25,11 @@
 .include "imagens/ralphAtaque1.data"
 .include "imagens/ralphAtaque2.data"
 .include "imagens/healthIcon.data"
+.include "imagens/fundo2.data"
 
-pontos: .word 0
-vidas: .word 3
+FASE2: .byte 0
+PONTOS: .byte 0
+VIDAS: .byte 3
 
 
 notas: .word 60, 0, 0,
@@ -177,11 +179,13 @@ LOOP:
 
 GAME_LOOP:
 
-        la t0,pontos #lendo a quantidade de pontos
-        lw t1, 0(t0) 
+        la t0,PONTOS #lendo a quantidade de pontos
+        lb t1, 0(t0) 
         li t2,26
         bne t1,t2,FASE_1
-        call GAME_OVER
+        la t0,FASE2
+        li t1,1 
+        sb t1,0(t0) #passando 1 pra FASE2
         FASE_1:        
 
 #Configurando fps do jogo
@@ -242,8 +246,13 @@ GAME_LOOP:
     sw s0,0(t0)            # Atualiza o LED com o valor de s0
     xori s0,s0,1          # Alterna o frame buffer (0 ou 1)
     
+    la t0,FASE2
+    lb a1,0(t0)
+    li a2,1
 
     la a0,fundo            # Carrega o endereço da imagem do tile em a0
+    beq a1,a2,CHAMA_FASE2
+    VOLTA:
     li a1,0	               # Carrega a última posição X
     li a2,0		           # Carrega a última posição Y
     mv a3, s0               # Alterna o fre para o tile
@@ -252,8 +261,8 @@ GAME_LOOP:
 
 ##########   Iniciando sistema de vidas     ############################
 
-        la t0,vidas #lendo a quantidade de vidas
-        lw t1, 0(t0)  #passando a quantidade de vidas pra t1
+        la t0,VIDAS #lendo a quantidade de vidas
+        lb t1, 0(t0)  #passando a quantidade de vidas pra t1
         li t2,3
 
         la a0,healthIcon       # Carrega o endereço da imagem do tile em a0
@@ -778,10 +787,10 @@ ANIMACAO_MARTELANDO:
 		addi t1,t1,1
 		sh t1,6(t0)  #salvando novo status da janelinha
 
-        la t0,pontos #lendo a quantidade de pontos
-        lw a0, 0(t0) 
+        la t0,PONTOS #lendo a quantidade de pontos
+        lb a0, 0(t0) 
         addi a0,a0,1
-        sh a0,0(t0) #alterando para a nova quantidade de pontos
+        sb a0,0(t0) #alterando para a nova quantidade de pontos
 
 	FIM_PROCURANDO_JANELINHA:
 		jalr t0, s8, 0
@@ -1045,3 +1054,7 @@ INICIANDO_JOB:
 GAME_OVER:
 li a7,10
 ecall
+
+CHAMA_FASE2:
+li a0, fundo2
+j VOLTA
