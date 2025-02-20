@@ -183,9 +183,8 @@ GAME_LOOP:
         lb t1, 0(t0) 
         li t2,26
         bne t1,t2,FASE_1
-        la t0,FASE2
-        li t1,1 
-        sb t1,0(t0) #passando 1 pra FASE2
+        j PROXIMA_FASE
+#
         FASE_1:        
 
 #Configurando fps do jogo
@@ -194,6 +193,10 @@ GAME_LOOP:
     ecall
 
 ########### INÍCIO DO LOOP MÚSICA ############
+
+    la t0, VIDAS
+    lb t1, 0(t0)
+    beqz t1, GAME_OVER
     
     la s1, notas
     lw s2, 0(s1) #quantas notas existem
@@ -428,9 +431,37 @@ KEY2:
     beq t2,t0,MOVE_UP     # Se 'w' é pressionado, pula para MOVE_UP
     li t0,'S'             # Carrega o valor ASCII da tecla 's'
     beq t2,t0,MOVE_DOWN   # Se 's' é pressionado, pula para MOVE_DOWN
+    li t0,'p'             # Carrega o valor ASCII da tecla 's'
+    beq t2,t0,PROXIMA_FASE   # Se 's' é pressionado, pula para PROXIMA_FASE
+    li t0,'P'             # Carrega o valor ASCII da tecla 's'
+    beq t2,t0,PROXIMA_FASE   # Se 's' é pressionado, pula para PROXIMA_FASE
 
 FIM:    
     ret                   # Retorna da função
+
+PROXIMA_FASE:
+
+    la t0, windows
+    sh zero, 6(t0)
+    sh zero, 14(t0)
+    sh zero, 22(t0)
+    sh zero, 30(t0)
+    sh zero, 38(t0)
+    sh zero, 46(t0)
+    sh zero, 54(t0)
+    sh zero, 62(t0)
+    sh zero, 70(t0)
+    sh zero, 78(t0)
+    sh zero, 86(t0)
+    sh zero, 94(t0)
+    sh zero, 102(t0)
+    la t0,FASE2
+    li t1,1
+    sb t1,0(t0)
+    la t0,PONTOS #lendo a quantidade de pontos
+    li t2, 27
+    sb t2, 0(t0)
+    ret
 
 
 IMPRIMIR_TIJOLOS:
@@ -455,6 +486,24 @@ IMPRIMIR_TIJOLOS:
 
         mv a3, s0
         call PRINT
+
+        lh a1, 2(s1)
+        la t1, CHAR_POS
+        lh t2, 0(t1)  # x
+        bne t2, a1, DEPOIS_DE_IMPRIMIR_TIJOLO
+        lh t2, 2(t1) # y
+        lh a1, 4(s1) # y do tijolo
+        addi a1, a1, 25
+        blt a1, t2, DEPOIS_DE_IMPRIMIR_TIJOLO
+        addi a1, a1, -25
+        addi t2, t2, 36
+        bgt a1, t2, DEPOIS_DE_IMPRIMIR_TIJOLO 
+        call EXCLUIR_TIJOLO
+        la t0, VIDAS
+        lb t1, 0(t0)
+        addi t1, t1, -1
+        sb t1, 0(t0)
+        
          
         DEPOIS_DE_IMPRIMIR_TIJOLO:
         addi s1, s1, 6
@@ -1056,5 +1105,7 @@ li a7,10
 ecall
 
 CHAMA_FASE2:
+
+
 li a0, fundo2
 j VOLTA
